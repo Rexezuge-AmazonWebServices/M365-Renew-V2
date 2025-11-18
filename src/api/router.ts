@@ -3,6 +3,7 @@ import { generateKey } from './routes/generate-key';
 import { storeCredentials } from './routes/store-credentials';
 import { getCredentials } from './routes/get-credentials';
 import { login } from './routes/login';
+import { swaggerSpec } from './swagger';
 
 export const router = async (
   event: any,
@@ -39,51 +40,38 @@ export const router = async (
     } else if (httpMethod === 'POST' && path === '/api/auth/login') {
       result = await login(event, context);
     } else if (httpMethod === 'GET' && path === '/docs') {
+      const swaggerUiHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <title>M365 Renew API Documentation</title>
+  <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@5.9.0/swagger-ui.css" />
+</head>
+<body>
+  <div id="swagger-ui"></div>
+  <script src="https://unpkg.com/swagger-ui-dist@5.9.0/swagger-ui-bundle.js"></script>
+  <script>
+    SwaggerUIBundle({
+      url: '/docs/swagger.json',
+      dom_id: '#swagger-ui',
+      presets: [
+        SwaggerUIBundle.presets.apis,
+        SwaggerUIBundle.presets.standalone
+      ]
+    });
+  </script>
+</body>
+</html>`;
+      result = {
+        statusCode: 200,
+        headers: { 'Content-Type': 'text/html', ...corsHeaders },
+        body: swaggerUiHtml
+      };
+    } else if (httpMethod === 'GET' && path === '/docs/swagger.json') {
       result = {
         statusCode: 200,
         headers: { 'Content-Type': 'application/json', ...corsHeaders },
-        body: JSON.stringify({
-          openapi: '3.0.0',
-          info: { title: 'M365 Renew API', version: '1.0.0' },
-          paths: {
-            '/api/admin/generate-key': {
-              post: {
-                tags: ['Admin'],
-                summary: 'Generate encryption key',
-                responses: { '200': { description: 'Key generated' } }
-              }
-            },
-            '/api/credentials/store': {
-              post: {
-                tags: ['Credentials'],
-                summary: 'Store user credentials',
-                requestBody: {
-                  content: {
-                    'application/json': {
-                      schema: {
-                        type: 'object',
-                        properties: {
-                          email_address: { type: 'string', format: 'email' },
-                          password: { type: 'string' },
-                          totp_key: { type: 'string' }
-                        },
-                        required: ['email_address', 'password', 'totp_key']
-                      }
-                    }
-                  }
-                },
-                responses: { '200': { description: 'Credentials stored' } }
-              }
-            },
-            '/api/auth/login': {
-              post: {
-                tags: ['Authentication'],
-                summary: 'M365 Login',
-                responses: { '200': { description: 'Login result' } }
-              }
-            }
-          }
-        })
+        body: JSON.stringify(swaggerSpec)
       };
     } else {
       result = {
