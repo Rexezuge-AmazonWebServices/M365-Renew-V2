@@ -8,7 +8,8 @@ export const getCredentials = async (
 ): Promise<APIGatewayProxyResult> => {
   try {
     // Extract user_id from path: /api/internal/credentials/{user_id}
-    const pathParts = event.path.split('/');
+    const path = event.rawPath || event.path;
+    const pathParts = path.split('/');
     const userId = pathParts[pathParts.length - 1];
     
     if (!userId) {
