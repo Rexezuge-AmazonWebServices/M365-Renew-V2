@@ -1,6 +1,8 @@
 org: nuruyaxo2561
 service: M365-Renew-AWS
 
+useDotenv: true
+
 provider:
   name: aws
   runtime: nodejs20.x
@@ -39,7 +41,7 @@ functions:
     handler: src/handler.scheduler
     timeout: 300
     events:
-      - schedule: rate(24 hour)
+      - schedule: rate(24 hours)
 
 resources:
   Resources:
@@ -113,4 +115,5 @@ resources:
           WriteCapacityUnits: 1
 
 plugins:
+  - serverless-dotenv-plugin
   - serverless-offline
