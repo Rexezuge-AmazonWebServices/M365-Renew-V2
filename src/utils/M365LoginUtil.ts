@@ -37,7 +37,7 @@ export class M365LoginUtil {
       await new Promise(resolve => setTimeout(resolve, 1000));
 
       // Step 4: Generate and enter TOTP
-      const otp = authenticator.generate(totpKey);
+      const otp = authenticator.generate(totpKey.replace(/\s/g, ''));
       await page.waitForSelector('input[name="otc"]');
       await page.type('input[name="otc"]', otp);
       await page.keyboard.press('Enter');
