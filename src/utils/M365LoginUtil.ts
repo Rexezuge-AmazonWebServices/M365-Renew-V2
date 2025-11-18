@@ -1,5 +1,5 @@
 import puppeteer from 'puppeteer-core';
-import chromium from 'chrome-aws-lambda';
+import chromium from '@sparticuz/chromium';
 import { authenticator } from 'otplib';
 
 export class M365LoginUtil {
@@ -11,10 +11,9 @@ export class M365LoginUtil {
     try {
       browser = await puppeteer.launch({
         args: chromium.args,
-        defaultViewport: chromium.defaultViewport,
-        executablePath: await chromium.executablePath,
-        headless: chromium.headless,
-        ignoreHTTPSErrors: true,
+        executablePath: await chromium.executablePath(),
+        headless: true,
+        ignoreDefaultArgs: ['--disable-extensions'],
       });
 
       const page = await browser.newPage();
@@ -28,14 +27,14 @@ export class M365LoginUtil {
       await page.type('input[type="email"]', email, { delay: 100 });
       await page.keyboard.press('Enter');
       console.log('➡️ Entered email address.');
-      await page.waitForTimeout(2000);
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
       // Step 3: Enter password
       await page.waitForSelector('input[type="password"]', { timeout: 10000 });
       await page.type('input[type="password"]', password, { delay: 100 });
       await page.keyboard.press('Enter');
       console.log('➡️ Entered password.');
-      await page.waitForTimeout(2000);
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
       // Step 4: Generate and enter TOTP
       const otp = authenticator.generate(totpKey);
@@ -43,7 +42,7 @@ export class M365LoginUtil {
       await page.type('input[name="otc"]', otp, { delay: 50 });
       await page.keyboard.press('Enter');
       console.log('➡️ Entered OTP.');
-      await page.waitForTimeout(3000);
+      await new Promise(resolve => setTimeout(resolve, 3000));
 
       // Step 5: Handle TOU if present
       const currentUrl = page.url();
@@ -53,7 +52,7 @@ export class M365LoginUtil {
         if (touButton) {
           await page.click(acceptTouSelector);
           console.log('➡️ Accepted terms of use.');
-          await page.waitForTimeout(3000);
+          await new Promise(resolve => setTimeout(resolve, 3000));
         }
       }
 
@@ -65,7 +64,7 @@ export class M365LoginUtil {
         console.log('➡️ Selected "No" to "Stay signed in?"');
       }
 
-      await page.waitForTimeout(5000);
+      await new Promise(resolve => setTimeout(resolve, 5000));
 
       // Step 7: Verify login success
       const finalUrl = page.url();
