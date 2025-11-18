@@ -78,16 +78,7 @@ resources:
         KeySchema:
           - AttributeName: userId
             KeyType: HASH
-        GlobalSecondaryIndexes:
-          - IndexName: StatusIndex
-            KeySchema:
-              - AttributeName: status
-                KeyType: HASH
-            Projection:
-              ProjectionType: ALL
-            ProvisionedThroughput:
-              ReadCapacityUnits: 1
-              WriteCapacityUnits: 1
+
         BillingMode: PROVISIONED
         ProvisionedThroughput:
           ReadCapacityUnits: 1
@@ -120,16 +111,7 @@ resources:
         KeySchema:
           - AttributeName: logId
             KeyType: HASH
-        GlobalSecondaryIndexes:
-          - IndexName: UserIdIndex
-            KeySchema:
-              - AttributeName: userId
-                KeyType: HASH
-            Projection:
-              ProjectionType: ALL
-            ProvisionedThroughput:
-              ReadCapacityUnits: 1
-              WriteCapacityUnits: 1
+
         BillingMode: PROVISIONED
         ProvisionedThroughput:
           ReadCapacityUnits: 1
