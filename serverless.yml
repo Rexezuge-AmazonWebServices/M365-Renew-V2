@@ -9,25 +9,14 @@ provider:
   region: us-east-2
   versionFunctions: false
   stackName: ${self:service}
+  role:
+    Fn::GetAtt: [ExecutionRole, Arn]
   environment:
     USERS_TABLE: ${self:service}-Users
     PROCESSING_STATE_TABLE: ${self:service}-Processing-State
     PROCESSING_LOG_TABLE: ${self:service}-Processing-Log
     AES_ENCRYPTION_KEY: ${env:AES_ENCRYPTION_KEY}
     NOTIFICATION_EMAIL: ${env:NOTIFICATION_EMAIL}
-  iamRoleStatements:
-    - Effect: Allow
-      Action:
-        - dynamodb:Query
-        - dynamodb:Scan
-        - dynamodb:GetItem
-        - dynamodb:PutItem
-        - dynamodb:UpdateItem
-        - dynamodb:DeleteItem
-      Resource:
-        - Fn::GetAtt: [UsersTable, Arn]
-        - Fn::GetAtt: [ProcessingStateTable, Arn]
-        - Fn::GetAtt: [ProcessingLogTable, Arn]
 
 functions:
   api:
@@ -46,6 +35,37 @@ functions:
 
 resources:
   Resources:
+    ExecutionRole:
+      Type: AWS::IAM::Role
+      Properties:
+        RoleName: ${self:service}-ExecutionRole
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service: lambda.amazonaws.com
+              Action: sts:AssumeRole
+        ManagedPolicyArns:
+          - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        Policies:
+          - PolicyName: DynamoDBAccess
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - dynamodb:Query
+                    - dynamodb:Scan
+                    - dynamodb:GetItem
+                    - dynamodb:PutItem
+                    - dynamodb:UpdateItem
+                    - dynamodb:DeleteItem
+                  Resource:
+                    - Fn::GetAtt: [UsersTable, Arn]
+                    - Fn::GetAtt: [ProcessingStateTable, Arn]
+                    - Fn::GetAtt: [ProcessingLogTable, Arn]
+
     UsersTable:
       Type: AWS::DynamoDB::Table
       Properties:
