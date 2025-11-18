@@ -1,14 +1,116 @@
-# "org" ensures this Service is used with the correct Serverless Framework Access Key.
 org: nuruyaxo2561
-# "service" is the name of this project. This will also be added to your AWS resource names.
 service: M365-Renew-AWS
 
 provider:
   name: aws
   runtime: nodejs20.x
+  region: us-east-1
+  environment:
+    USERS_TABLE: ${self:service}-users-${sls:stage}
+    PROCESSING_STATE_TABLE: ${self:service}-processing-state-${sls:stage}
+    PROCESSING_LOG_TABLE: ${self:service}-processing-log-${sls:stage}
+    AES_ENCRYPTION_KEY: ${env:AES_ENCRYPTION_KEY}
+    NOTIFICATION_EMAIL: ${env:NOTIFICATION_EMAIL}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource:
+        - Fn::GetAtt: [UsersTable, Arn]
+        - Fn::GetAtt: [ProcessingStateTable, Arn]
+        - Fn::GetAtt: [ProcessingLogTable, Arn]
 
 functions:
-  rateHandler:
-    handler: handler.run
+  api:
+    handler: src/handler.api
+    timeout: 30
+    events:
+      - http:
+          path: /{proxy+}
+          method: ANY
+          cors: true
+  
+  scheduler:
+    handler: src/handler.scheduler
+    timeout: 300
     events:
       - schedule: rate(1 minute)
+
+resources:
+  Resources:
+    UsersTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.USERS_TABLE}
+        AttributeDefinitions:
+          - AttributeName: userId
+            AttributeType: S
+          - AttributeName: status
+            AttributeType: S
+        KeySchema:
+          - AttributeName: userId
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: StatusIndex
+            KeySchema:
+              - AttributeName: status
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+            ProvisionedThroughput:
+              ReadCapacityUnits: 1
+              WriteCapacityUnits: 1
+        BillingMode: PROVISIONED
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+
+    ProcessingStateTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.PROCESSING_STATE_TABLE}
+        AttributeDefinitions:
+          - AttributeName: userId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: userId
+            KeyType: HASH
+        BillingMode: PROVISIONED
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+
+    ProcessingLogTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.PROCESSING_LOG_TABLE}
+        AttributeDefinitions:
+          - AttributeName: logId
+            AttributeType: S
+          - AttributeName: userId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: logId
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: UserIdIndex
+            KeySchema:
+              - AttributeName: userId
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+            ProvisionedThroughput:
+              ReadCapacityUnits: 1
+              WriteCapacityUnits: 1
+        BillingMode: PROVISIONED
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+
+plugins:
+  - serverless-offline

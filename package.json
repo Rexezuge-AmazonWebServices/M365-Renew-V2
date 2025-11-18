@@ -1,0 +1,31 @@
+{
+  "name": "m365-renew-aws",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "deploy": "serverless deploy",
+    "dev": "serverless offline",
+    "test": "jest"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.1691.0",
+    "@aws-sdk/client-dynamodb": "^3.658.1",
+    "@aws-sdk/client-ses": "^3.658.1",
+    "@aws-sdk/lib-dynamodb": "^3.658.1",
+    "chrome-aws-lambda": "^10.1.0",
+    "puppeteer-core": "^10.4.0",
+    "zod": "^3.23.8",
+    "otplib": "^12.0.1",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.145",
+    "@types/node": "^20.10.0",
+    "@types/uuid": "^9.0.7",
+    "serverless": "^3.38.0",
+    "serverless-offline": "^13.3.0",
+    "typescript": "^5.3.0",
+    "jest": "^29.7.0",
+    "@types/jest": "^29.5.8"
+  }
+}
