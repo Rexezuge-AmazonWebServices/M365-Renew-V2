@@ -81,9 +81,11 @@ export const swaggerSpec = {
               schema: {
                 type: 'object',
                 properties: {
-                  userId: { type: 'string' }
+                  email_address: { type: 'string', format: 'email' },
+                  password: { type: 'string' },
+                  totp_key: { type: 'string' }
                 },
-                required: ['userId']
+                required: ['email_address', 'password', 'totp_key']
               }
             }
           }
