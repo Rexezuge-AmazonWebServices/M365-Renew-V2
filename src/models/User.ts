@@ -15,6 +15,7 @@ export interface UserProcessingState {
   lastProcessStatus?: 'success' | 'failure' | 'skipped';
   lastMessage?: string;
   updatedAt: string;
+  dynamoTTL: number;
 }
 
 export interface UserProcessingLog {
@@ -24,4 +25,5 @@ export interface UserProcessingLog {
   processStatus: 'success' | 'failure' | 'skipped';
   message?: string;
   updatedAt: string;
+  dynamoTTL: number;
 }

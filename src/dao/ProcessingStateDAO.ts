@@ -18,6 +18,7 @@ export class ProcessingStateDAO {
     message?: string
   ): Promise<void> {
     const now = new Date().toISOString();
+    const oneYearFromNow = Math.floor(Date.now() / 1000) + (365 * 24 * 60 * 60);
 
     const state: UserProcessingState = {
       userId,
@@ -25,6 +26,7 @@ export class ProcessingStateDAO {
       lastProcessStatus: status,
       lastMessage: message,
       updatedAt: now,
+      dynamoTTL: oneYearFromNow,
     };
 
     await this.client.send(new PutCommand({

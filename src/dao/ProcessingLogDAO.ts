@@ -19,6 +19,7 @@ export class ProcessingLogDAO {
     message?: string
   ): Promise<void> {
     const now = new Date().toISOString();
+    const fiveYearsFromNow = Math.floor(Date.now() / 1000) + (5 * 365 * 24 * 60 * 60);
 
     const log: UserProcessingLog = {
       logId: uuidv4(),
@@ -27,6 +28,7 @@ export class ProcessingLogDAO {
       processStatus: status,
       message,
       updatedAt: now,
+      dynamoTTL: fiveYearsFromNow,
     };
 
     await this.client.send(new PutCommand({
