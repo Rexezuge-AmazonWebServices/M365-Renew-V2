@@ -14,6 +14,7 @@ provider:
   stackName: ${self:service}
   role:
     Fn::GetAtt: [ExecutionRole, Arn]
+  logRetentionInDays: 30
   environment:
     USERS_TABLE: ${self:service}-Users
     PROCESSING_STATE_TABLE: ${self:service}-Processing-State
