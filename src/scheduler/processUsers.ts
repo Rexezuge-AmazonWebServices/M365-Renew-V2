@@ -78,7 +78,7 @@ async function sendNotificationMessage(userId: string, status: 'success' | 'fail
     
     const executionTime: string = new Date().toISOString().replace("T", " ").replace("Z", " UTC");
     const result: string = status === 'success' ? "Completed" : "Failed";
-    const additionalInformation: string = status === 'success' ? 'No irregularities were observed during the execution.' : (error instanceof Error ? error.message : 'Unknown');
+    const additionalInformation: string = status === 'success' ? 'No irregularities were observed during the execution.' : message;
     const messageBody: string = [
       'Hello Boss Davis,',
       '',
@@ -92,10 +92,10 @@ async function sendNotificationMessage(userId: string, status: 'success' | 'fail
       '',
       'Thank you.',
       'John Doe',
-      'JohnDoe@example.com'
+      'JohnDoe@example.com',
       '',
       '1249 Evergreen Ridge Cir',
-      'Northvale, CA 95248, USA'
+      'Northvale, CA 95248, USA',
     ].join('\r\n');
     const subject: string = `${result} - Maintenance Log: M365 Renew Task`;
     const command: PublishCommand = new PublishCommand({
