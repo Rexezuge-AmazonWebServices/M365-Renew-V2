@@ -10,6 +10,7 @@
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.658.1",
     "@aws-sdk/client-ses": "^3.658.1",
+    "@aws-sdk/client-sns": "^3.936.0",
     "@aws-sdk/lib-dynamodb": "^3.658.1",
     "@sparticuz/chromium": "^141.0.0",
     "aws-sdk": "^2.1691.0",
