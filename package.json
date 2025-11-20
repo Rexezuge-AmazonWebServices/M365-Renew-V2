@@ -1,11 +1,15 @@
 {
-  "name": "m365-renew-aws",
+  "name": "m365-renew-v2",
   "version": "1.0.0",
   "private": true,
   "scripts": {
+    "install": "npm install --legacy-peer-deps",
+    "predeploy": "npm run install && npm run prettier && npm run lint && npm run tsc",
     "deploy": "serverless deploy",
     "dev": "serverless offline",
-    "version": "serverless --version"
+    "prettier": "prettier --write .",
+    "lint": "eslint --ignore-pattern dist/ --ignore-pattern .serverless/ --ext .ts,.tsx --fix .",
+    "tsc": "tsc --noemit"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.658.1",
@@ -24,10 +28,16 @@
     "@types/aws-lambda": "^8.10.145",
     "@types/node": "^20.10.0",
     "@types/uuid": "^9.0.7",
+    "eslint": "^9.39.x",
+    "eslint-config-prettier": "^10.1.x",
+    "eslint-plugin-prettier": "^5.5.x",
+    "globals": "^16.5.x",
+    "prettier": "^3.6.x",
     "serverless": "^4.23.0",
     "serverless-dotenv-plugin": "^6.0.0",
     "serverless-offline": "^14.4.0",
     "serverless-plugin-typescript": "^2.1.5",
-    "typescript": "^5.3.0"
+    "typescript": "^5.3.0",
+    "typescript-eslint": "^8.46.x"
   }
 }

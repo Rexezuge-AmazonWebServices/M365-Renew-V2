@@ -5,15 +5,12 @@ import { getCredentials } from './routes/get-credentials';
 import { login } from './routes/login';
 import { swaggerSpec } from './swagger';
 
-export const router = async (
-  event: any,
-  context: Context
-): Promise<APIGatewayProxyResult> => {
+export const router = async (event: any, context: Context): Promise<APIGatewayProxyResult> => {
   // Lambda Function URL uses different event structure than API Gateway
   const httpMethod = event.requestContext?.http?.method || event.httpMethod;
   const path = event.rawPath || event.path;
   console.log('Request:', { httpMethod, path });
-  
+
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type,Authorization',
@@ -65,13 +62,13 @@ export const router = async (
       result = {
         statusCode: 200,
         headers: { 'Content-Type': 'text/html', ...corsHeaders },
-        body: swaggerUiHtml
+        body: swaggerUiHtml,
       };
     } else if (httpMethod === 'GET' && path === '/docs/swagger.json') {
       result = {
         statusCode: 200,
         headers: { 'Content-Type': 'application/json', ...corsHeaders },
-        body: JSON.stringify(swaggerSpec)
+        body: JSON.stringify(swaggerSpec),
       };
     } else {
       result = {

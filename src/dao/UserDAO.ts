@@ -13,12 +13,7 @@ export class UserDAO {
     this.tableName = process.env.USERS_TABLE || 'users';
   }
 
-  async createUser(
-    encryptedEmail: string,
-    encryptedPassword: string,
-    encryptedTotpKey: string,
-    salt: string
-  ): Promise<string> {
+  async createUser(encryptedEmail: string, encryptedPassword: string, encryptedTotpKey: string, salt: string): Promise<string> {
     const userId = uuidv4();
     const now = new Date().toISOString();
 
@@ -33,37 +28,43 @@ export class UserDAO {
       updatedAt: now,
     };
 
-    await this.client.send(new PutCommand({
-      TableName: this.tableName,
-      Item: user,
-    }));
+    await this.client.send(
+      new PutCommand({
+        TableName: this.tableName,
+        Item: user,
+      }),
+    );
 
     return userId;
   }
 
   async getUser(userId: string): Promise<User | null> {
-    const result = await this.client.send(new GetCommand({
-      TableName: this.tableName,
-      Key: { userId },
-    }));
+    const result = await this.client.send(
+      new GetCommand({
+        TableName: this.tableName,
+        Key: { userId },
+      }),
+    );
 
-    return result.Item as User || null;
+    return (result.Item as User) || null;
   }
 
   async getNextUserForProcessing(): Promise<User | null> {
     // Get all active users
-    const result = await this.client.send(new ScanCommand({
-      TableName: this.tableName,
-      FilterExpression: '#status = :status',
-      ExpressionAttributeNames: {
-        '#status': 'status',
-      },
-      ExpressionAttributeValues: {
-        ':status': 'active',
-      },
-    }));
+    const result = await this.client.send(
+      new ScanCommand({
+        TableName: this.tableName,
+        FilterExpression: '#status = :status',
+        ExpressionAttributeNames: {
+          '#status': 'status',
+        },
+        ExpressionAttributeValues: {
+          ':status': 'active',
+        },
+      }),
+    );
 
-    const activeUsers = result.Items as User[] || [];
+    const activeUsers = (result.Items as User[]) || [];
     if (activeUsers.length === 0) {
       return null;
     }
@@ -73,14 +74,14 @@ export class UserDAO {
     const userStates = await Promise.all(
       activeUsers.map(async (user) => ({
         user,
-        state: await processingStateDAO.getState(user.userId)
-      }))
+        state: await processingStateDAO.getState(user.userId),
+      })),
     );
 
     // Filter users based on processing criteria
     const now = new Date();
     const minIntervalHours = parseInt(process.env.MIN_PROCESSING_INTERVAL_HOURS || '25');
-    
+
     const eligibleUsers = userStates.filter(({ user, state }) => {
       // If never processed, user is eligible
       if (!state?.lastProcessedAt) {
@@ -90,7 +91,7 @@ export class UserDAO {
       // Check if enough time has passed since last processing
       const lastProcessed = new Date(state.lastProcessedAt);
       const hoursSinceLastProcessing = (now.getTime() - lastProcessed.getTime()) / (1000 * 60 * 60);
-      
+
       return hoursSinceLastProcessing >= minIntervalHours;
     });
 
@@ -103,12 +104,12 @@ export class UserDAO {
       // Never processed users get highest priority
       if (!a.state?.lastProcessedAt && b.state?.lastProcessedAt) return -1;
       if (a.state?.lastProcessedAt && !b.state?.lastProcessedAt) return 1;
-      
+
       // If both have been processed, prioritize oldest
       if (a.state?.lastProcessedAt && b.state?.lastProcessedAt) {
         return new Date(a.state.lastProcessedAt).getTime() - new Date(b.state.lastProcessedAt).getTime();
       }
-      
+
       // If neither processed, sort by creation date (oldest first)
       return new Date(a.user.createdAt).getTime() - new Date(b.user.createdAt).getTime();
     });
@@ -117,17 +118,19 @@ export class UserDAO {
   }
 
   async updateUserStatus(userId: string, status: 'active' | 'disabled' | 'locked'): Promise<void> {
-    await this.client.send(new UpdateCommand({
-      TableName: this.tableName,
-      Key: { userId },
-      UpdateExpression: 'SET #status = :status, updatedAt = :updatedAt',
-      ExpressionAttributeNames: {
-        '#status': 'status',
-      },
-      ExpressionAttributeValues: {
-        ':status': status,
-        ':updatedAt': new Date().toISOString(),
-      },
-    }));
+    await this.client.send(
+      new UpdateCommand({
+        TableName: this.tableName,
+        Key: { userId },
+        UpdateExpression: 'SET #status = :status, updatedAt = :updatedAt',
+        ExpressionAttributeNames: {
+          '#status': 'status',
+        },
+        ExpressionAttributeValues: {
+          ':status': status,
+          ':updatedAt': new Date().toISOString(),
+        },
+      }),
+    );
   }
 }

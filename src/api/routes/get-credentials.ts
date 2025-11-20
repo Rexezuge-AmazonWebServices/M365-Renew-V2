@@ -2,16 +2,13 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda
 import { UserDAO } from '../../dao/UserDAO';
 import { decryptData } from '../../crypto/aes-gcm';
 
-export const getCredentials = async (
-  event: APIGatewayProxyEvent,
-  context: Context
-): Promise<APIGatewayProxyResult> => {
+export const getCredentials = async (event: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult> => {
   try {
     // Extract user_id from path: /api/internal/credentials/{user_id}
     const path = event.rawPath || event.path;
     const pathParts = path.split('/');
     const userId = pathParts[pathParts.length - 1];
-    
+
     if (!userId) {
       return {
         statusCode: 400,
@@ -31,7 +28,7 @@ export const getCredentials = async (
 
     const userDAO = new UserDAO();
     const user = await userDAO.getUser(userId);
-    
+
     if (!user) {
       return {
         statusCode: 404,

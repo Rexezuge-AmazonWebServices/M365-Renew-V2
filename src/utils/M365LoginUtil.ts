@@ -7,7 +7,7 @@ export class M365LoginUtil {
 
   public static async login(email: string, password: string, totpKey: string): Promise<boolean> {
     let browser;
-    
+
     try {
       browser = await puppeteer.launch({
         args: chromium.args,
@@ -27,14 +27,14 @@ export class M365LoginUtil {
       await page.type('input[type="email"]', email, { delay: 100 });
       await page.keyboard.press('Enter');
       console.log('➡️ Entered email address.');
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
       // Step 3: Enter password
       await page.waitForSelector('input[type="password"]', { timeout: 10000 });
       await page.type('input[type="password"]', password, { delay: 100 });
       await page.keyboard.press('Enter');
       console.log('➡️ Entered password.');
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
       // Step 4: Generate and enter TOTP
       const otp = authenticator.generate(totpKey.replace(/\s/g, ''));
@@ -42,7 +42,7 @@ export class M365LoginUtil {
       await page.type('input[name="otc"]', otp, { delay: 50 });
       await page.keyboard.press('Enter');
       console.log('➡️ Entered OTP.');
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      await new Promise((resolve) => setTimeout(resolve, 3000));
 
       // Step 5: Handle TOU if present
       const currentUrl = page.url();
@@ -52,7 +52,7 @@ export class M365LoginUtil {
         if (touButton) {
           await page.click(acceptTouSelector);
           console.log('➡️ Accepted terms of use.');
-          await new Promise(resolve => setTimeout(resolve, 3000));
+          await new Promise((resolve) => setTimeout(resolve, 3000));
         }
       }
 
@@ -64,18 +64,18 @@ export class M365LoginUtil {
         console.log('➡️ Selected "No" to "Stay signed in?"');
       }
 
-      await new Promise(resolve => setTimeout(resolve, 5000));
+      await new Promise((resolve) => setTimeout(resolve, 5000));
 
       // Step 7: Verify login success
       const finalUrl = page.url();
       console.log('➡️ Final URL:', finalUrl);
-      
+
       const loginSuccess = finalUrl.includes('https://www.microsoft.com/');
       const loginError = await page.$('div.error, div[role="alert"]');
 
       const success = loginSuccess && !loginError;
       console.log(success ? '✅ Sign-in was successful' : '❌ Sign-in failed');
-      
+
       return success;
     } catch (error) {
       console.error('Login process failed:', error);

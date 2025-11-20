@@ -12,13 +12,9 @@ export class ProcessingStateDAO {
     this.tableName = process.env.PROCESSING_STATE_TABLE || 'processing-state';
   }
 
-  async upsertState(
-    userId: string,
-    status: 'success' | 'failure' | 'skipped',
-    message?: string
-  ): Promise<void> {
+  async upsertState(userId: string, status: 'success' | 'failure' | 'skipped', message?: string): Promise<void> {
     const now = new Date().toISOString();
-    const oneYearFromNow = Math.floor(Date.now() / 1000) + (365 * 24 * 60 * 60);
+    const oneYearFromNow = Math.floor(Date.now() / 1000) + 365 * 24 * 60 * 60;
 
     const state: UserProcessingState = {
       userId,
@@ -29,18 +25,22 @@ export class ProcessingStateDAO {
       dynamoTTL: oneYearFromNow,
     };
 
-    await this.client.send(new PutCommand({
-      TableName: this.tableName,
-      Item: state,
-    }));
+    await this.client.send(
+      new PutCommand({
+        TableName: this.tableName,
+        Item: state,
+      }),
+    );
   }
 
   async getState(userId: string): Promise<UserProcessingState | null> {
-    const result = await this.client.send(new GetCommand({
-      TableName: this.tableName,
-      Key: { userId },
-    }));
+    const result = await this.client.send(
+      new GetCommand({
+        TableName: this.tableName,
+        Key: { userId },
+      }),
+    );
 
-    return result.Item as UserProcessingState || null;
+    return (result.Item as UserProcessingState) || null;
   }
 }

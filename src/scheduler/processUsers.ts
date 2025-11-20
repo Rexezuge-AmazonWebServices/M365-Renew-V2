@@ -46,12 +46,11 @@ export const processUsers = async (event: ScheduledEvent, context: Context): Pro
       // Update processing state and log
       await stateDAO.upsertState(user.userId, status, resultMessage);
       await logDAO.createLog(user.userId, status, resultMessage);
-
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       status = 'failure';
       resultMessage = errorMessage;
-      
+
       await stateDAO.upsertState(user.userId, 'failure', errorMessage);
       await logDAO.createLog(user.userId, 'failure', errorMessage);
     }
@@ -60,7 +59,6 @@ export const processUsers = async (event: ScheduledEvent, context: Context): Pro
     await sendNotificationMessage(user.userId, status, resultMessage);
 
     console.log(`✅ Processed user ${user.userId}: ${status} - ${resultMessage}`);
-
   } catch (error) {
     console.error('❌ Error processing users:', error);
   }
@@ -74,10 +72,10 @@ async function sendNotificationMessage(userId: string, status: 'success' | 'fail
   }
 
   try {
-    const snsClient: SNSClient= new SNSClient({ region: process.env.AWS_REGION || 'us-east-2' });
-    
-    const executionTime: string = new Date().toISOString().replace("T", " ").replace("Z", " UTC");
-    const result: string = status === 'success' ? "Completed" : "Failed";
+    const snsClient: SNSClient = new SNSClient({ region: process.env.AWS_REGION || 'us-east-2' });
+
+    const executionTime: string = new Date().toISOString().replace('T', ' ').replace('Z', ' UTC');
+    const result: string = status === 'success' ? 'Completed' : 'Failed';
     const additionalInformation: string = status === 'success' ? 'No irregularities were observed during the execution.' : message;
     const messageBody: string = [
       'Hello Boss Davis,',

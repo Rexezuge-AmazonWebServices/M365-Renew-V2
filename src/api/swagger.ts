@@ -3,7 +3,7 @@ export const swaggerSpec = {
   info: {
     title: 'M365 Renew API',
     version: '1.0.0',
-    description: 'API for managing Microsoft 365 credential renewal automation'
+    description: 'API for managing Microsoft 365 credential renewal automation',
   },
   paths: {
     '/api/admin/generate-key': {
@@ -19,14 +19,14 @@ export const swaggerSpec = {
                   type: 'object',
                   properties: {
                     message: { type: 'string' },
-                    key: { type: 'string' }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
+                    key: { type: 'string' },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     },
     '/api/credentials/store': {
       post: {
@@ -41,17 +41,17 @@ export const swaggerSpec = {
                 properties: {
                   email_address: { type: 'string', format: 'email' },
                   password: { type: 'string' },
-                  totp_key: { type: 'string' }
+                  totp_key: { type: 'string' },
                 },
-                required: ['email_address', 'password', 'totp_key']
-              }
-            }
-          }
+                required: ['email_address', 'password', 'totp_key'],
+              },
+            },
+          },
         },
         responses: {
-          '200': { description: 'Credentials stored successfully' }
-        }
-      }
+          '200': { description: 'Credentials stored successfully' },
+        },
+      },
     },
     '/api/internal/credentials/{userId}': {
       get: {
@@ -62,13 +62,13 @@ export const swaggerSpec = {
             name: 'userId',
             in: 'path',
             required: true,
-            schema: { type: 'string' }
-          }
+            schema: { type: 'string' },
+          },
         ],
         responses: {
-          '200': { description: 'Credentials retrieved successfully' }
-        }
-      }
+          '200': { description: 'Credentials retrieved successfully' },
+        },
+      },
     },
     '/api/auth/login': {
       post: {
@@ -83,17 +83,17 @@ export const swaggerSpec = {
                 properties: {
                   email_address: { type: 'string', format: 'email' },
                   password: { type: 'string' },
-                  totp_key: { type: 'string' }
+                  totp_key: { type: 'string' },
                 },
-                required: ['email_address', 'password', 'totp_key']
-              }
-            }
-          }
+                required: ['email_address', 'password', 'totp_key'],
+              },
+            },
+          },
         },
         responses: {
-          '200': { description: 'Login attempt completed' }
-        }
-      }
-    }
-  }
+          '200': { description: 'Login attempt completed' },
+        },
+      },
+    },
+  },
 };

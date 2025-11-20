@@ -8,10 +8,7 @@ const LoginSchema = z.object({
   totp_key: z.string(),
 });
 
-export const login = async (
-  event: APIGatewayProxyEvent,
-  context: Context
-): Promise<APIGatewayProxyResult> => {
+export const login = async (event: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult> => {
   try {
     const body = JSON.parse(event.body || '{}');
     const { email_address, password, totp_key } = LoginSchema.parse(body);

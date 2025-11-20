@@ -1,14 +1,15 @@
 # Deployment Guide
 
-## Migration Complete! 
+## Migration Complete!
 
 The M365-Renew application has been successfully migrated from Cloudflare Workers to AWS Lambda.
 
 ## What's Been Migrated
 
 ✅ **API Routes**: All existing endpoints maintained
+
 - `POST /api/admin/generate-key`
-- `POST /api/credentials/store` 
+- `POST /api/credentials/store`
 - `GET /api/internal/credentials/{user_id}`
 - `POST /api/auth/login`
 
@@ -25,11 +26,13 @@ The M365-Renew application has been successfully migrated from Cloudflare Worker
 ## Pre-Deployment Setup
 
 1. **Configure AWS CLI** (if not already done):
+
    ```bash
    aws configure
    ```
 
 2. **Set up environment variables**:
+
    ```bash
    cp .env.example .env
    # Edit .env with your values
@@ -52,6 +55,7 @@ npm run deploy
 ## Post-Deployment Steps
 
 1. **Generate encryption key**:
+
    ```bash
    curl -X POST https://YOUR_API_URL/api/admin/generate-key \
      -H "Content-Type: application/json" \
@@ -84,13 +88,13 @@ npm run deploy
 
 ## Differences from Cloudflare Version
 
-| Feature | Cloudflare | AWS Lambda |
-|---------|------------|------------|
-| Database | SQLite (D1) | DynamoDB |
-| Scheduling | Cron Triggers | EventBridge |
-| Browser | @cloudflare/puppeteer | chrome-aws-lambda |
-| Email | Custom service | AWS SES |
-| Framework | Hono + chanfana | Native Lambda |
+| Feature    | Cloudflare            | AWS Lambda        |
+| ---------- | --------------------- | ----------------- |
+| Database   | SQLite (D1)           | DynamoDB          |
+| Scheduling | Cron Triggers         | EventBridge       |
+| Browser    | @cloudflare/puppeteer | chrome-aws-lambda |
+| Email      | Custom service        | AWS SES           |
+| Framework  | Hono + chanfana       | Native Lambda     |
 
 ## Troubleshooting
 
@@ -102,11 +106,12 @@ npm run deploy
 4. **Environment variables**: Verify all required env vars are set
 
 ### Logs:
+
 ```bash
 # View API logs
 serverless logs -f api
 
-# View scheduler logs  
+# View scheduler logs
 serverless logs -f scheduler
 ```
 

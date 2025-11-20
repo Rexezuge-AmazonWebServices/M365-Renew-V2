@@ -13,13 +13,9 @@ export class ProcessingLogDAO {
     this.tableName = process.env.PROCESSING_LOG_TABLE || 'processing-log';
   }
 
-  async createLog(
-    userId: string,
-    status: 'success' | 'failure' | 'skipped',
-    message?: string
-  ): Promise<void> {
+  async createLog(userId: string, status: 'success' | 'failure' | 'skipped', message?: string): Promise<void> {
     const now = new Date().toISOString();
-    const fiveYearsFromNow = Math.floor(Date.now() / 1000) + (5 * 365 * 24 * 60 * 60);
+    const fiveYearsFromNow = Math.floor(Date.now() / 1000) + 5 * 365 * 24 * 60 * 60;
 
     const log: UserProcessingLog = {
       logId: uuidv4(),
@@ -31,9 +27,11 @@ export class ProcessingLogDAO {
       dynamoTTL: fiveYearsFromNow,
     };
 
-    await this.client.send(new PutCommand({
-      TableName: this.tableName,
-      Item: log,
-    }));
+    await this.client.send(
+      new PutCommand({
+        TableName: this.tableName,
+        Item: log,
+      }),
+    );
   }
 }
