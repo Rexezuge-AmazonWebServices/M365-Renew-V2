@@ -10,7 +10,7 @@ export class M365LoginUtil {
 
     try {
       browser = await puppeteer.launch({
-        args: chromium.args,
+        args: chromium.args || [],
         executablePath: await chromium.executablePath(),
         headless: true,
         ignoreDefaultArgs: ['--disable-extensions'],
