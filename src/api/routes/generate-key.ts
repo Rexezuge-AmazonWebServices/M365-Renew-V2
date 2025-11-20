@@ -1,7 +1,6 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
-import { z } from 'zod';
 
-export const generateKey = async (event: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult> => {
+export const generateKey = async (_event: APIGatewayProxyEvent, _context: Context): Promise<APIGatewayProxyResult> => {
   try {
     // Generate a new AES key
     const key = crypto.getRandomValues(new Uint8Array(32));

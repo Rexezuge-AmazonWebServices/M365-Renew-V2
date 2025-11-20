@@ -5,10 +5,11 @@ import { getCredentials } from './routes/get-credentials';
 import { login } from './routes/login';
 import { swaggerSpec } from './swagger';
 
-export const router = async (event: any, context: Context): Promise<APIGatewayProxyResult> => {
+export const router = async (event: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult> => {
   // Lambda Function URL uses different event structure than API Gateway
-  const httpMethod = event.requestContext?.http?.method || event.httpMethod;
-  const path = event.rawPath || event.path;
+  const httpMethod =
+    (event as APIGatewayProxyEvent & { requestContext?: { http?: { method: string } } }).requestContext?.http?.method || event.httpMethod;
+  const path = (event as APIGatewayProxyEvent & { rawPath?: string }).rawPath || event.path;
   console.log('Request:', { httpMethod, path });
 
   const corsHeaders = {

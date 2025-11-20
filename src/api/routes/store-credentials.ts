@@ -9,7 +9,7 @@ const StoreCredentialsSchema = z.object({
   totp_key: z.string(),
 });
 
-export const storeCredentials = async (event: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult> => {
+export const storeCredentials = async (event: APIGatewayProxyEvent, _context: Context): Promise<APIGatewayProxyResult> => {
   try {
     const body = JSON.parse(event.body || '{}');
     const { email_address, password, totp_key } = StoreCredentialsSchema.parse(body);

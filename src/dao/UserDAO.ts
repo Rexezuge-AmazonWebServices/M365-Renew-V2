@@ -82,7 +82,7 @@ export class UserDAO {
     const now = new Date();
     const minIntervalHours = parseInt(process.env.MIN_PROCESSING_INTERVAL_HOURS || '25');
 
-    const eligibleUsers = userStates.filter(({ user, state }) => {
+    const eligibleUsers = userStates.filter(({ user: _user, state }) => {
       // If never processed, user is eligible
       if (!state?.lastProcessedAt) {
         return true;

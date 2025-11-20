@@ -6,7 +6,7 @@ import { decryptData } from '../crypto/aes-gcm';
 import { M365LoginUtil } from '../utils/M365LoginUtil';
 import { SNSClient, PublishCommand } from '@aws-sdk/client-sns';
 
-export const processUsers = async (event: ScheduledEvent, context: Context): Promise<void> => {
+export const processUsers = async (_event: ScheduledEvent, _context: Context): Promise<void> => {
   console.log('🔄 Starting user processing...');
 
   const userDAO = new UserDAO();
