@@ -13,7 +13,8 @@ export class ProcessingLogDAO {
   }
 
   async createLog(userId: string, status: 'success' | 'failure' | 'skipped', message?: string): Promise<void> {
-    const { v4: uuidv4 } = await import('uuid');
+    const uuid = await import('uuid');
+    const uuidv4 = uuid.v4;
     const logId = uuidv4();
     const now = new Date().toISOString();
     const fiveYearsFromNow = Math.floor(Date.now() / 1000) + 5 * 365 * 24 * 60 * 60;

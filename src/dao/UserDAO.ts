@@ -13,7 +13,8 @@ export class UserDAO {
   }
 
   async createUser(encryptedEmail: string, encryptedPassword: string, encryptedTotpKey: string, salt: string): Promise<string> {
-    const { v4: uuidv4 } = await import('uuid');
+    const uuid = await import('uuid');
+    const uuidv4 = uuid.v4;
     const userId = uuidv4();
     const now = new Date().toISOString();
 
