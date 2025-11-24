@@ -3,8 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "clean": "rm -rf .build/ .serverless/",
-    "predeploy": "npm run clean && npm run prettier && npm run lint && npm run tsc",
+    "clean": "rm -rf .build/ .serverless/ dist/",
+    "build": "tsc",
+    "predeploy": "npm run clean && npm run prettier && npm run lint && npm run build",
     "deploy": "serverless deploy",
     "prettier": "prettier --write .",
     "lint": "eslint --ignore-pattern dist/ --ignore-pattern .serverless/ --ext .ts,.tsx --fix .",
@@ -29,7 +30,6 @@
     "globals": "^16.5.x",
     "prettier": "^3.6.x",
     "serverless": "^4.25.0",
-    "serverless-plugin-typescript": "^2.1.5",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.47.x"
   }

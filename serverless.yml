@@ -4,7 +4,11 @@ service: M365-Renew-V2
 useDotenv: true
 
 build:
-  esbuild: false
+  esbuild:
+    bundle: true
+    minify: false
+    external:
+      - '@sparticuz/chromium'
 
 provider:
   name: aws
@@ -146,6 +150,3 @@ resources:
         TopicArn:
           Ref: NotificationTopic
         Endpoint: ${env:NOTIFICATION_EMAIL}
-
-plugins:
-  - serverless-plugin-typescript
