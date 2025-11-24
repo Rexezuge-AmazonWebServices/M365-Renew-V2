@@ -149,4 +149,3 @@ resources:
 
 plugins:
   - serverless-plugin-typescript
-  - serverless-dotenv-plugin
