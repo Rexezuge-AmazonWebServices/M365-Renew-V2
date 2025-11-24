@@ -1,7 +1,6 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand } from '@aws-sdk/lib-dynamodb';
 import { UserProcessingLog } from '@/models/User';
-import { v4 as uuidv4 } from 'uuid';
 
 export class ProcessingLogDAO {
   private client: DynamoDBDocumentClient;
@@ -14,6 +13,7 @@ export class ProcessingLogDAO {
   }
 
   async createLog(userId: string, status: 'success' | 'failure' | 'skipped', message?: string): Promise<void> {
+    const { v4: uuidv4 } = await import('uuid');
     const now = new Date().toISOString();
     const fiveYearsFromNow = Math.floor(Date.now() / 1000) + 5 * 365 * 24 * 60 * 60;
 

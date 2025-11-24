@@ -1,7 +1,6 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand, GetCommand, ScanCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { User } from '@/models/User';
-import { v4 as uuidv4 } from 'uuid';
 
 export class UserDAO {
   private client: DynamoDBDocumentClient;
@@ -14,6 +13,7 @@ export class UserDAO {
   }
 
   async createUser(encryptedEmail: string, encryptedPassword: string, encryptedTotpKey: string, salt: string): Promise<string> {
+    const { v4: uuidv4 } = await import('uuid');
     const userId = uuidv4();
     const now = new Date().toISOString();
 
