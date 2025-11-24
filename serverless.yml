@@ -37,7 +37,7 @@ functions:
     name: ${self:service}-Scheduler
     timeout: 300
     events:
-      - schedule: rate(24 hours)
+      - schedule: rate(22 hours)
 
 resources:
   Resources:
