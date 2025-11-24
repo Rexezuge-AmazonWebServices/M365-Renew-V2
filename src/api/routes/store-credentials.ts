@@ -1,18 +1,19 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
-import { z } from 'zod';
 import { UserDAO } from '../../dao/UserDAO';
 import { encryptData } from '../../crypto/aes-gcm';
-
-const StoreCredentialsSchema = z.object({
-  email_address: z.string().email(),
-  password: z.string(),
-  totp_key: z.string(),
-});
 
 export const storeCredentials = async (event: APIGatewayProxyEvent, _context: Context): Promise<APIGatewayProxyResult> => {
   try {
     const body = JSON.parse(event.body || '{}');
-    const { email_address, password, totp_key } = StoreCredentialsSchema.parse(body);
+    const { email_address, password, totp_key } = body;
+
+    if (!email_address || !password || !totp_key) {
+      return {
+        statusCode: 400,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: 'Missing required fields' }),
+      };
+    }
 
     const key = process.env.AES_ENCRYPTION_KEY;
     if (!key) {
