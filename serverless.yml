@@ -5,46 +5,48 @@ provider:
   architecture: x86_64
   region: us-east-2
   versionFunctions: false
-  stackName: ${self:service}
+  stackName: '${self:service}'
   role:
-    Fn::GetAtt: [ExecutionRole, Arn]
+    'Fn::GetAtt':
+      - ExecutionRole
+      - Arn
   logRetentionInDays: 30
   environment:
-    USERS_TABLE: ${self:service}-Users
-    PROCESSING_STATE_TABLE: ${self:service}-Processing-State
-    PROCESSING_LOG_TABLE: ${self:service}-Processing-Log
-    AES_ENCRYPTION_KEY: ${env:AES_ENCRYPTION_KEY}
+    USERS_TABLE: '${self:service}-Users'
+    PROCESSING_STATE_TABLE: '${self:service}-Processing-State'
+    PROCESSING_LOG_TABLE: '${self:service}-Processing-Log'
+    AES_ENCRYPTION_KEY: '${env:AES_ENCRYPTION_KEY}'
     SNS_TOPIC_ARN:
       Ref: NotificationTopic
 functions:
   api:
     handler: src/handler.api
-    name: ${self:service}-API
+    name: '${self:service}-API'
     timeout: 60
     reservedConcurrency: 0
     url:
       cors: true
   scheduler:
     handler: src/handler.scheduler
-    name: ${self:service}-Scheduler
+    name: '${self:service}-Scheduler'
     timeout: 300
     events:
       - schedule: rate(22 hours)
 resources:
   Resources:
     ExecutionRole:
-      Type: AWS::IAM::Role
+      Type: 'AWS::IAM::Role'
       Properties:
-        RoleName: ${self:service}-ExecutionRole
+        RoleName: '${self:service}-ExecutionRole'
         AssumeRolePolicyDocument:
           Version: '2012-10-17'
           Statement:
             - Effect: Allow
               Principal:
                 Service: lambda.amazonaws.com
-              Action: sts:AssumeRole
+              Action: 'sts:AssumeRole'
         ManagedPolicyArns:
-          - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+          - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
         Policies:
           - PolicyName: DynamoDBAccess
             PolicyDocument:
@@ -52,29 +54,35 @@ resources:
               Statement:
                 - Effect: Allow
                   Action:
-                    - dynamodb:Query
-                    - dynamodb:Scan
-                    - dynamodb:GetItem
-                    - dynamodb:PutItem
-                    - dynamodb:UpdateItem
-                    - dynamodb:DeleteItem
+                    - 'dynamodb:Query'
+                    - 'dynamodb:Scan'
+                    - 'dynamodb:GetItem'
+                    - 'dynamodb:PutItem'
+                    - 'dynamodb:UpdateItem'
+                    - 'dynamodb:DeleteItem'
                   Resource:
-                    - Fn::GetAtt: [UsersTable, Arn]
-                    - Fn::GetAtt: [ProcessingStateTable, Arn]
-                    - Fn::GetAtt: [ProcessingLogTable, Arn]
+                    - 'Fn::GetAtt':
+                        - UsersTable
+                        - Arn
+                    - 'Fn::GetAtt':
+                        - ProcessingStateTable
+                        - Arn
+                    - 'Fn::GetAtt':
+                        - ProcessingLogTable
+                        - Arn
           - PolicyName: SNSAccess
             PolicyDocument:
               Version: '2012-10-17'
               Statement:
                 - Effect: Allow
                   Action:
-                    - sns:Publish
+                    - 'sns:Publish'
                   Resource:
                     Ref: NotificationTopic
     UsersTable:
-      Type: AWS::DynamoDB::Table
+      Type: 'AWS::DynamoDB::Table'
       Properties:
-        TableName: ${self:provider.environment.USERS_TABLE}
+        TableName: '${self:provider.environment.USERS_TABLE}'
         AttributeDefinitions:
           - AttributeName: userId
             AttributeType: S
@@ -86,9 +94,9 @@ resources:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
     ProcessingStateTable:
-      Type: AWS::DynamoDB::Table
+      Type: 'AWS::DynamoDB::Table'
       Properties:
-        TableName: ${self:provider.environment.PROCESSING_STATE_TABLE}
+        TableName: '${self:provider.environment.PROCESSING_STATE_TABLE}'
         AttributeDefinitions:
           - AttributeName: userId
             AttributeType: S
@@ -103,9 +111,9 @@ resources:
           AttributeName: dynamoTTL
           Enabled: true
     ProcessingLogTable:
-      Type: AWS::DynamoDB::Table
+      Type: 'AWS::DynamoDB::Table'
       Properties:
-        TableName: ${self:provider.environment.PROCESSING_LOG_TABLE}
+        TableName: '${self:provider.environment.PROCESSING_LOG_TABLE}'
         AttributeDefinitions:
           - AttributeName: logId
             AttributeType: S
@@ -120,16 +128,16 @@ resources:
           AttributeName: dynamoTTL
           Enabled: true
     NotificationTopic:
-      Type: AWS::SNS::Topic
+      Type: 'AWS::SNS::Topic'
       Properties:
-        TopicName: ${self:service}-Notifications
+        TopicName: '${self:service}-Notifications'
     NotificationSubscription:
-      Type: AWS::SNS::Subscription
+      Type: 'AWS::SNS::Subscription'
       Properties:
         Protocol: email
         TopicArn:
           Ref: NotificationTopic
-        Endpoint: ${env:NOTIFICATION_EMAIL}
+        Endpoint: '${env:NOTIFICATION_EMAIL}'
 useDotenv: true
 build:
   esbuild:
