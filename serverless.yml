@@ -1,8 +1,6 @@
 org: nuruyaxo2561
 service: M365-Renew-V2
-
 useDotenv: true
-
 build:
   esbuild:
     bundle: true
@@ -10,7 +8,6 @@ build:
     sourcemap: false
     external:
       - '@sparticuz/chromium'
-
 provider:
   name: aws
   runtime: nodejs24.x
@@ -28,7 +25,6 @@ provider:
     AES_ENCRYPTION_KEY: ${env:AES_ENCRYPTION_KEY}
     SNS_TOPIC_ARN:
       Ref: NotificationTopic
-
 functions:
   api:
     handler: src/handler.api
@@ -37,14 +33,12 @@ functions:
     reservedConcurrency: 0
     url:
       cors: true
-
   scheduler:
     handler: src/handler.scheduler
     name: ${self:service}-Scheduler
     timeout: 300
     events:
       - schedule: rate(22 hours)
-
 resources:
   Resources:
     ExecutionRole:
@@ -86,7 +80,6 @@ resources:
                     - sns:Publish
                   Resource:
                     Ref: NotificationTopic
-
     UsersTable:
       Type: AWS::DynamoDB::Table
       Properties:
@@ -97,12 +90,10 @@ resources:
         KeySchema:
           - AttributeName: userId
             KeyType: HASH
-
         BillingMode: PROVISIONED
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
-
     ProcessingStateTable:
       Type: AWS::DynamoDB::Table
       Properties:
@@ -120,7 +111,6 @@ resources:
         TimeToLiveSpecification:
           AttributeName: dynamoTTL
           Enabled: true
-
     ProcessingLogTable:
       Type: AWS::DynamoDB::Table
       Properties:
@@ -131,7 +121,6 @@ resources:
         KeySchema:
           - AttributeName: logId
             KeyType: HASH
-
         BillingMode: PROVISIONED
         ProvisionedThroughput:
           ReadCapacityUnits: 1
@@ -139,12 +128,10 @@ resources:
         TimeToLiveSpecification:
           AttributeName: dynamoTTL
           Enabled: true
-
     NotificationTopic:
       Type: AWS::SNS::Topic
       Properties:
         TopicName: ${self:service}-Notifications
-
     NotificationSubscription:
       Type: AWS::SNS::Subscription
       Properties:
