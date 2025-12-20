@@ -6,7 +6,6 @@ provider:
   region: us-east-2
   versionFunctions: false
   stackName: '${self:service}'
-  stackDescription: github.com/Rexezuge-AmazonWebServices/M365-Renew-V2
   role:
     'Fn::GetAtt':
       - ExecutionRole
