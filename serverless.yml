@@ -1,12 +1,4 @@
 service: M365-Renew-V2
-useDotenv: true
-build:
-  esbuild:
-    bundle: true
-    minify: true
-    sourcemap: false
-    external:
-      - '@sparticuz/chromium'
 provider:
   name: aws
   runtime: nodejs24.x
@@ -138,3 +130,11 @@ resources:
         TopicArn:
           Ref: NotificationTopic
         Endpoint: ${env:NOTIFICATION_EMAIL}
+useDotenv: true
+build:
+  esbuild:
+    bundle: true
+    minify: true
+    sourcemap: false
+    external:
+      - '@sparticuz/chromium'
