@@ -1,4 +1,3 @@
-org: nuruyaxo2561
 service: M365-Renew-V2
 useDotenv: true
 build:
