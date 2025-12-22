@@ -42,7 +42,7 @@ jobs:
     name: Cleanup Deployment Bucket
     runs-on: ubuntu-latest
     needs: deploy
-    if: success()
+    if: always()
 
     steps:
       - name: Configure AWS Credentials
