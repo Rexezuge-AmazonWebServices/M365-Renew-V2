@@ -12,25 +12,25 @@
     "tsc": "tsc --noemit"
   },
   "dependencies": {
-    "@aws-sdk/client-dynamodb": "^3.975.0",
-    "@aws-sdk/client-sns": "^3.975.0",
-    "@aws-sdk/lib-dynamodb": "^3.975.0",
-    "@sparticuz/chromium": "^143.0.4",
-    "otplib": "^13.2.0",
-    "puppeteer-core": "^24.36.0",
-    "swagger-ui-dist": "^5.31.0",
-    "uuid": "^13.0.0"
+    "@aws-sdk/client-dynamodb": "^3.975.x",
+    "@aws-sdk/client-sns": "^3.975.x",
+    "@aws-sdk/lib-dynamodb": "^3.975.x",
+    "@sparticuz/chromium": "^143.0.x",
+    "otplib": "^13.2.x",
+    "puppeteer-core": "^24.36.x",
+    "swagger-ui-dist": "^5.31.x",
+    "uuid": "^13.0.x"
   },
   "devDependencies": {
-    "@types/aws-lambda": "^8.10.160",
-    "@types/node": "^25.0.10",
+    "@types/aws-lambda": "^8.10.x",
+    "@types/node": "^25.0.x",
     "eslint": "^9.39.x",
     "eslint-config-prettier": "^10.1.x",
     "eslint-plugin-prettier": "^5.5.x",
     "globals": "^17.1.x",
     "prettier": "^3.8.x",
-    "serverless": "^4.31.0",
-    "typescript": "^5.9.3",
+    "serverless": "^4.31.x",
+    "typescript": "^5.9.x",
     "typescript-eslint": "^8.53.x"
   }
 }
