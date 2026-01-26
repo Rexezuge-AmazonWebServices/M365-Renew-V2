@@ -2,6 +2,7 @@ import puppeteer from 'puppeteer-core';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const chromium = require('@sparticuz/chromium');
 import { TOTP } from 'otplib';
+import { crypto } from '@otplib/plugin-crypto-noble';
 
 export interface LoginResult {
   success: boolean;
@@ -43,7 +44,8 @@ export class M365LoginUtil {
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
       // Step 4: Generate and enter TOTP
-      const otp = await new TOTP().generate({ secret: totpKey.replace(/\s/g, '') });
+      const totp = new TOTP({ crypto });
+      const otp = await totp.generate({ secret: totpKey.replace(/\s/g, '') });
       await page.waitForSelector('input[name="otc"]', { timeout: 10000 });
       await page.type('input[name="otc"]', otp, { delay: 50 });
       await page.keyboard.press('Enter');
