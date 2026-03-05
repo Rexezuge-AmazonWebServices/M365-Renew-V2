@@ -84,7 +84,13 @@ export class M365LoginUtil {
       const finalUrl = page.url();
       console.log('➡️ Final URL:', finalUrl);
 
-      const loginSuccess = finalUrl.includes('https://www.microsoft.com/');
+      let loginSuccess = false;
+      try {
+        const parsedUrl = new URL(finalUrl);
+        loginSuccess = parsedUrl.protocol === 'https:' && parsedUrl.hostname === 'www.microsoft.com';
+      } catch {
+        loginSuccess = false;
+      }
       const loginError = await page.$('div.error, div[role="alert"]');
 
       const success = loginSuccess && !loginError;
