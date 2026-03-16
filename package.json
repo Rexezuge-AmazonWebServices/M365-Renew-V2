@@ -12,9 +12,9 @@
     "tsc": "tsc --noemit"
   },
   "dependencies": {
-    "@aws-sdk/client-dynamodb": "^3.1002.x",
-    "@aws-sdk/client-sns": "^3.1009.x",
-    "@aws-sdk/lib-dynamodb": "^3.1002.x",
+    "@aws-sdk/client-dynamodb": "^3.1010.x",
+    "@aws-sdk/client-sns": "^3.1010.x",
+    "@aws-sdk/lib-dynamodb": "^3.1010.x",
     "@sparticuz/chromium": "^143.0.x",
     "otplib": "^13.3.x",
     "puppeteer-core": "^24.39.x",
@@ -23,7 +23,7 @@
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.x",
-    "@types/node": "^25.4.x",
+    "@types/node": "^25.5.x",
     "eslint": "^10.0.x",
     "eslint-config-prettier": "^10.1.x",
     "eslint-plugin-prettier": "^5.5.x",
