@@ -14,7 +14,7 @@
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.1010.x",
     "@aws-sdk/client-sns": "^3.1012.x",
-    "@aws-sdk/lib-dynamodb": "^3.1010.x",
+    "@aws-sdk/lib-dynamodb": "^3.1017.x",
     "@sparticuz/chromium": "^143.0.x",
     "otplib": "^13.3.x",
     "puppeteer-core": "^24.39.x",
