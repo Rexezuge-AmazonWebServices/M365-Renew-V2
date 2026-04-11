@@ -12,10 +12,20 @@ export class UserDAO {
     this.tableName = process.env.USERS_TABLE || 'users';
   }
 
-  async createUser(encryptedEmail: string, encryptedPassword: string, encryptedTotpKey: string, salt: string): Promise<string> {
-    const uuid = await import('uuid');
-    const uuidv4 = uuid.v4;
-    const userId = uuidv4();
+  static async generateUserId(email: string): Promise<string> {
+    const normalized = email.toLowerCase().trim();
+    const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(normalized));
+    const hex = Buffer.from(hash).toString('hex');
+    return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
+  }
+
+  async createUser(
+    userId: string,
+    encryptedEmail: string,
+    encryptedPassword: string,
+    encryptedTotpKey: string,
+    salt: string,
+  ): Promise<string> {
     const now = new Date().toISOString();
 
     const user: User = {

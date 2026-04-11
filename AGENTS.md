@@ -28,6 +28,7 @@ There is no test suite configured in this project.
 - **scheduler** (`src/handler.scheduler`) — EventBridge-triggered every 355 minutes. Processes one user per invocation via `src/scheduler/processUsers.ts`. Timeout: 300s.
 
 **Data layer** uses the DAO pattern with three DynamoDB tables:
+
 - `src/dao/UserDAO.ts` — User CRUD and processing queue selection (priority: never-processed first, then oldest-processed)
 - `src/dao/ProcessingStateDAO.ts` — Tracks last processing time/status per user (TTL: 1 year)
 - `src/dao/ProcessingLogDAO.ts` — Audit trail of processing attempts (TTL: 5 years)
@@ -41,6 +42,7 @@ There is no test suite configured in this project.
 ## API Routes
 
 Defined in `src/api/router.ts`, documented via OpenAPI at `/docs`:
+
 - `POST /api/admin/generate-key` — Generate AES encryption key
 - `POST /api/credentials/store` — Store encrypted user credentials
 - `GET /api/internal/credentials/{userId}` — Retrieve decrypted credentials
@@ -56,6 +58,7 @@ Defined in `src/api/router.ts`, documented via OpenAPI at `/docs`:
 ## Environment Variables
 
 Required in `.env` (see `.env.example`):
+
 - `AES_ENCRYPTION_KEY` — Base64-encoded 256-bit key (generate via the admin endpoint)
 - `NOTIFICATION_EMAIL` — Email address for SNS notifications
 

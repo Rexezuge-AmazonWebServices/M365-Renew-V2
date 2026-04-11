@@ -35,7 +35,8 @@ export const storeCredentials = async (event: APIGatewayProxyEvent, _context: Co
 
     // Store in DynamoDB
     const userDAO = new UserDAO();
-    const userId = await userDAO.createUser(encryptedEmail.encrypted, encryptedPassword.encrypted, encryptedTotpKey.encrypted, ivBase64);
+    const userId = await UserDAO.generateUserId(email_address);
+    await userDAO.createUser(userId, encryptedEmail.encrypted, encryptedPassword.encrypted, encryptedTotpKey.encrypted, ivBase64);
 
     return {
       statusCode: 200,
