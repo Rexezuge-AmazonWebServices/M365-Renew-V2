@@ -1,5 +1,5 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
-import { M365LoginUtil } from '../../utils/M365LoginUtil';
+import { M365LoginUtil } from '../../utils/M365LoginUtil.js';
 
 export const login = async (event: APIGatewayProxyEvent, _context: Context): Promise<APIGatewayProxyResult> => {
   try {

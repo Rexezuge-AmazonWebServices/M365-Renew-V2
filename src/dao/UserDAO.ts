@@ -1,6 +1,6 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand, GetCommand, ScanCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
-import { User } from '@/models/User';
+import { User } from '../models/User.js';
 
 export class UserDAO {
   private client: DynamoDBDocumentClient;
@@ -71,7 +71,7 @@ export class UserDAO {
     }
 
     // Get processing states for all users
-    const processingStateDAO = new (await import('./ProcessingStateDAO')).ProcessingStateDAO();
+    const processingStateDAO = new (await import('./ProcessingStateDAO.js')).ProcessingStateDAO();
     const userStates = await Promise.all(
       activeUsers.map(async (user) => ({
         user,

@@ -1,9 +1,9 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
-import { generateKey } from './routes/generate-key';
-import { storeCredentials } from './routes/store-credentials';
-import { getCredentials } from './routes/get-credentials';
-import { login } from './routes/login';
-import { swaggerSpec } from './swagger';
+import { generateKey } from './routes/generate-key.js';
+import { storeCredentials } from './routes/store-credentials.js';
+import { getCredentials } from './routes/get-credentials.js';
+import { login } from './routes/login.js';
+import { swaggerSpec } from './swagger.js';
 
 export const router = async (event: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult> => {
   // Lambda Function URL uses different event structure than API Gateway

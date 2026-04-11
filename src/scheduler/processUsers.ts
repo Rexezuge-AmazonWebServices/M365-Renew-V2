@@ -1,9 +1,9 @@
 import { ScheduledEvent, Context } from 'aws-lambda';
-import { UserDAO } from '../dao/UserDAO';
-import { ProcessingStateDAO } from '../dao/ProcessingStateDAO';
-import { ProcessingLogDAO } from '../dao/ProcessingLogDAO';
-import { decryptData } from '../crypto/aes-gcm';
-import { M365LoginUtil } from '../utils/M365LoginUtil';
+import { UserDAO } from '../dao/UserDAO.js';
+import { ProcessingStateDAO } from '../dao/ProcessingStateDAO.js';
+import { ProcessingLogDAO } from '../dao/ProcessingLogDAO.js';
+import { decryptData } from '../crypto/aes-gcm.js';
+import { M365LoginUtil } from '../utils/M365LoginUtil.js';
 import { SNSClient, PublishCommand } from '@aws-sdk/client-sns';
 
 export const processUsers = async (_event: ScheduledEvent, _context: Context): Promise<void> => {

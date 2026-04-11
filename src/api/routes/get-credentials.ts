@@ -1,6 +1,6 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
-import { UserDAO } from '../../dao/UserDAO';
-import { decryptData } from '../../crypto/aes-gcm';
+import { UserDAO } from '../../dao/UserDAO.js';
+import { decryptData } from '../../crypto/aes-gcm.js';
 
 export const getCredentials = async (event: APIGatewayProxyEvent, _context: Context): Promise<APIGatewayProxyResult> => {
   try {
