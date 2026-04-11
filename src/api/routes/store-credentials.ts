@@ -33,9 +33,19 @@ export const storeCredentials = async (event: APIGatewayProxyEvent, _context: Co
     const encryptedPassword = await encryptData(password, key, ivBase64);
     const encryptedTotpKey = await encryptData(totp_key, key, ivBase64);
 
-    // Store in DynamoDB
+    // Check for duplicate user
     const userDAO = new UserDAO();
     const userId = await UserDAO.generateUserId(email_address);
+    const existingUser = await userDAO.getUser(userId);
+    if (existingUser) {
+      return {
+        statusCode: 409,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: 'User with this email already exists', user_id: userId }),
+      };
+    }
+
+    // Store in DynamoDB
     await userDAO.createUser(userId, encryptedEmail.encrypted, encryptedPassword.encrypted, encryptedTotpKey.encrypted, ivBase64);
 
     return {
