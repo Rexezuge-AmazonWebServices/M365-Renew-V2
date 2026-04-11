@@ -6,6 +6,36 @@ import { decryptData } from '../crypto/aes-gcm.js';
 import { M365LoginUtil } from '../utils/M365LoginUtil.js';
 import { SNSClient, PublishCommand } from '@aws-sdk/client-sns';
 
+async function migrateOldSchemaUsers(userDAO: UserDAO, stateDAO: ProcessingStateDAO): Promise<void> {
+  const key = process.env.AES_ENCRYPTION_KEY;
+  if (!key) return;
+
+  const users = await userDAO.getAllActiveUsers();
+
+  for (const user of users) {
+    const email = await decryptData(user.encryptedEmailAddress, key, user.salt);
+    const expectedId = await UserDAO.generateUserId(email);
+
+    if (user.userId === expectedId) continue;
+
+    console.log(`🔄 Migrating user ${user.userId} → ${expectedId}`);
+
+    // Create new record with the deterministic ID
+    await userDAO.createUser(expectedId, user.encryptedEmailAddress, user.encryptedPassword, user.encryptedTotpKey, user.salt);
+
+    // Migrate processing state
+    const oldState = await stateDAO.getState(user.userId);
+    if (oldState?.lastProcessedAt && oldState.lastProcessStatus) {
+      await stateDAO.upsertState(expectedId, oldState.lastProcessStatus, oldState.lastMessage);
+    }
+
+    // Delete old record
+    await userDAO.deleteUser(user.userId);
+
+    console.log(`✅ Migrated user ${user.userId} → ${expectedId}`);
+  }
+}
+
 export const processUsers = async (_event: ScheduledEvent, _context: Context): Promise<void> => {
   console.log('🔄 Starting user processing...');
 
@@ -14,6 +44,9 @@ export const processUsers = async (_event: ScheduledEvent, _context: Context): P
   const logDAO = new ProcessingLogDAO();
 
   try {
+    // Migrate any old-schema users (random UUID → deterministic hash)
+    await migrateOldSchemaUsers(userDAO, stateDAO);
+
     // Get next user for processing
     const user = await userDAO.getNextUserForProcessing();
     if (!user) {
