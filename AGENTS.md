@@ -25,11 +25,11 @@ There is no test suite configured in this project.
 **Two Lambda functions** defined in `serverless.yml`, both entry-pointed from `src/handler.ts`:
 
 - **api** (`src/handler.api`) — HTTP handler via Lambda Function URL (not API Gateway). Routes are dispatched manually in `src/api/router.ts` by matching HTTP method + path. Timeout: 60s. Reserved concurrency is 0 (disabled by default).
-- **scheduler** (`src/handler.scheduler`) — EventBridge-triggered every 355 minutes. Processes one user per invocation via `src/scheduler/processUsers.ts`. Timeout: 300s.
+- **scheduler** (`src/handler.scheduler`) — EventBridge-triggered every 355 minutes. Processes one user per invocation via `src/scheduler/processUsers.ts`. On each run, it first auto-migrates any legacy users (random UUID v4 → deterministic SHA-256 hash key), then proceeds with normal processing. Timeout: 300s.
 
 **Data layer** uses the DAO pattern with three DynamoDB tables:
 
-- `src/dao/UserDAO.ts` — User CRUD and processing queue selection (priority: never-processed first, then oldest-processed)
+- `src/dao/UserDAO.ts` — User CRUD, processing queue selection, and schema migration. The `userId` primary key is a deterministic SHA-256 hash of the normalized email (lowercased, trimmed), formatted as a UUID-style hex string. This ensures the same email always maps to the same key for deduplication. Legacy users created with random UUID v4 keys are auto-migrated by the scheduler (see below).
 - `src/dao/ProcessingStateDAO.ts` — Tracks last processing time/status per user (TTL: 1 year)
 - `src/dao/ProcessingLogDAO.ts` — Audit trail of processing attempts (TTL: 5 years)
 
@@ -44,7 +44,7 @@ There is no test suite configured in this project.
 Defined in `src/api/router.ts`, documented via OpenAPI at `/docs`:
 
 - `POST /api/admin/generate-key` — Generate AES encryption key
-- `POST /api/credentials/store` — Store encrypted user credentials
+- `POST /api/credentials/store` — Store encrypted user credentials (returns 409 if email already exists)
 - `GET /api/internal/credentials/{userId}` — Retrieve decrypted credentials
 - `POST /api/auth/login` — Test M365 login with Puppeteer
 
