@@ -91,7 +91,13 @@ export class M365LoginUtil {
       } catch {
         loginSuccess = false;
       }
-      const loginError = await page.$('div.error, div[role="alert"]');
+      let loginError = null;
+      try {
+        loginError = await page.$('div.error, div[role="alert"]');
+      } catch {
+        // Execution context can be destroyed by a page navigation (e.g., Microsoft SPA redirect).
+        // If the URL already confirms we landed on microsoft.com, this is a false negative.
+      }
 
       const success = loginSuccess && !loginError;
       console.log(success ? '✅ Sign-in was successful' : '❌ Sign-in failed');
