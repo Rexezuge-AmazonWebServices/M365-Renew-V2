@@ -7,7 +7,7 @@ export class ProcessingStateDAO {
   private tableName: string;
 
   constructor() {
-    const dynamoClient = new DynamoDBClient({ region: process.env.AWS_REGION || 'us-east-1' });
+    const dynamoClient = new DynamoDBClient({ region: process.env.AWS_REGION || 'us-east-1', maxAttempts: 8 });
     this.client = DynamoDBDocumentClient.from(dynamoClient);
     this.tableName = process.env.PROCESSING_STATE_TABLE || 'processing-state';
   }
