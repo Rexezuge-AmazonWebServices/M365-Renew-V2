@@ -64,8 +64,9 @@ export class M365LoginUtil {
         const acceptTouSelector = '[data-testid="primaryButton"]';
         const touButton = await page.$(acceptTouSelector);
         if (touButton) {
-          await Promise.all([page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 15000 }), page.click(acceptTouSelector)]);
+          await page.click(acceptTouSelector);
           console.log('➡️ Accepted terms of use.');
+          await new Promise((resolve) => setTimeout(resolve, 3000));
         }
       }
 
@@ -73,18 +74,11 @@ export class M365LoginUtil {
       const staySignedInSelector = '[data-testid="secondaryButton"]';
       const staySignedInButton = await page.$(staySignedInSelector);
       if (staySignedInButton) {
-        await Promise.all([page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 30000 }), page.click(staySignedInSelector)]);
+        await page.click(staySignedInSelector);
         console.log('➡️ Selected "No" to "Stay signed in?"');
       }
 
-      // Wait for any remaining redirects in the OAuth chain to settle
-      if (!page.url().startsWith('https://www.microsoft.com')) {
-        try {
-          await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 15000 });
-        } catch {
-          // No further navigation within timeout — proceed with current URL
-        }
-      }
+      await new Promise((resolve) => setTimeout(resolve, 5000));
 
       // Step 7: Verify login success
       const finalUrl = page.url();
