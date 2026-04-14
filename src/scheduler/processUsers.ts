@@ -1,66 +1,17 @@
 import { ScheduledEvent, Context } from 'aws-lambda';
 import { UserDAO } from '../dao/UserDAO.js';
-import { ProcessingStateDAO } from '../dao/ProcessingStateDAO.js';
 import { ProcessingLogDAO } from '../dao/ProcessingLogDAO.js';
 import { decryptData } from '../crypto/aes-gcm.js';
 import { M365LoginUtil } from '../utils/M365LoginUtil.js';
 import { SNSClient, PublishCommand } from '@aws-sdk/client-sns';
 
-async function migrateUsers(userDAO: UserDAO, stateDAO: ProcessingStateDAO): Promise<void> {
-  const key = process.env.AES_ENCRYPTION_KEY;
-  if (!key) return;
-
-  const users = await userDAO.getAllActiveUsers();
-  const minIntervalHours = parseInt(process.env.MIN_PROCESSING_INTERVAL_HOURS || '25');
-
-  for (const user of users) {
-    const email = await decryptData(user.encryptedEmailAddress, key, user.salt);
-    const expectedId = await UserDAO.generateUserId(email);
-
-    // Migrate old-schema users (random UUID → deterministic hash)
-    if (user.userId !== expectedId) {
-      console.log(`🔄 Migrating user ${user.userId} → ${expectedId}`);
-
-      await userDAO.createUser(expectedId, user.encryptedEmailAddress, user.encryptedPassword, user.encryptedTotpKey, user.salt);
-
-      const oldState = await stateDAO.getState(user.userId);
-      if (oldState?.lastProcessedAt && oldState.lastProcessStatus) {
-        await stateDAO.upsertState(expectedId, oldState.lastProcessStatus, oldState.lastMessage);
-        const nextAfter = Math.floor(new Date(oldState.lastProcessedAt).getTime() / 1000) + minIntervalHours * 3600;
-        await userDAO.updateProcessingSchedule(expectedId, nextAfter, 0);
-      }
-
-      await userDAO.deleteUser(user.userId);
-      console.log(`✅ Migrated user ${user.userId} → ${expectedId}`);
-      continue;
-    }
-
-    // Backfill nextProcessingAfter for existing users missing it
-    if (user.nextProcessingAfter == null) {
-      const state = await stateDAO.getState(user.userId);
-      let nextProcessingAfter: number;
-      if (state?.lastProcessedAt) {
-        nextProcessingAfter = Math.floor(new Date(state.lastProcessedAt).getTime() / 1000) + minIntervalHours * 3600;
-      } else {
-        nextProcessingAfter = 0;
-      }
-      await userDAO.updateProcessingSchedule(user.userId, nextProcessingAfter, 0);
-      console.log(`✅ Backfilled nextProcessingAfter for user ${user.userId}`);
-    }
-  }
-}
-
 export const processUsers = async (_event: ScheduledEvent, _context: Context): Promise<void> => {
   console.log('🔄 Starting user processing...');
 
   const userDAO = new UserDAO();
-  const stateDAO = new ProcessingStateDAO();
   const logDAO = new ProcessingLogDAO();
 
   try {
-    // Migrate old-schema users and backfill nextProcessingAfter
-    await migrateUsers(userDAO, stateDAO);
-
     // Get next user for processing
     const user = await userDAO.getNextUserForProcessing();
     if (!user) {
@@ -90,15 +41,12 @@ export const processUsers = async (_event: ScheduledEvent, _context: Context): P
       status = loginResult.success ? 'success' : 'failure';
       resultMessage = loginResult.success ? 'Login successful' : loginResult.errorMessage || 'Login failed';
 
-      // Update processing state and log
-      await stateDAO.upsertState(user.userId, status, resultMessage);
       await logDAO.createLog(user.userId, status, resultMessage);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       status = 'failure';
       resultMessage = errorMessage;
 
-      await stateDAO.upsertState(user.userId, 'failure', errorMessage);
       await logDAO.createLog(user.userId, 'failure', errorMessage);
     }
 

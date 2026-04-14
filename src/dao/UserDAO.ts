@@ -1,13 +1,5 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import {
-  DynamoDBDocumentClient,
-  PutCommand,
-  GetCommand,
-  QueryCommand,
-  ScanCommand,
-  UpdateCommand,
-  DeleteCommand,
-} from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, PutCommand, GetCommand, QueryCommand, UpdateCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
 import { User } from '../models/User.js';
 
 export class UserDAO {
@@ -112,23 +104,6 @@ export class UserDAO {
         },
       }),
     );
-  }
-
-  async getAllActiveUsers(): Promise<User[]> {
-    const result = await this.client.send(
-      new ScanCommand({
-        TableName: this.tableName,
-        FilterExpression: '#status = :status',
-        ExpressionAttributeNames: {
-          '#status': 'status',
-        },
-        ExpressionAttributeValues: {
-          ':status': 'active',
-        },
-      }),
-    );
-
-    return (result.Items as User[]) || [];
   }
 
   async deleteUser(userId: string): Promise<void> {

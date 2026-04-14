@@ -13,7 +13,6 @@ provider:
   logRetentionInDays: 30
   environment:
     USERS_TABLE: '${self:service}-Users'
-    PROCESSING_STATE_TABLE: '${self:service}-Processing-State'
     PROCESSING_LOG_TABLE: '${self:service}-Processing-Log'
     AES_ENCRYPTION_KEY: '${env:AES_ENCRYPTION_KEY}'
     SNS_TOPIC_ARN:
@@ -71,9 +70,6 @@ resources:
                               - Arn
                           - '/index/*'
                     - 'Fn::GetAtt':
-                        - ProcessingStateTable
-                        - Arn
-                    - 'Fn::GetAtt':
                         - ProcessingLogTable
                         - Arn
           - PolicyName: SNSAccess
@@ -115,23 +111,6 @@ resources:
             ProvisionedThroughput:
               ReadCapacityUnits: 1
               WriteCapacityUnits: 1
-    ProcessingStateTable:
-      Type: 'AWS::DynamoDB::Table'
-      Properties:
-        TableName: '${self:provider.environment.PROCESSING_STATE_TABLE}'
-        AttributeDefinitions:
-          - AttributeName: userId
-            AttributeType: S
-        KeySchema:
-          - AttributeName: userId
-            KeyType: HASH
-        BillingMode: PROVISIONED
-        ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
-        TimeToLiveSpecification:
-          AttributeName: dynamoTTL
-          Enabled: true
     ProcessingLogTable:
       Type: 'AWS::DynamoDB::Table'
       Properties:

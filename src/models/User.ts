@@ -11,15 +11,6 @@ export interface User {
   updatedAt: string;
 }
 
-export interface UserProcessingState {
-  userId: string;
-  lastProcessedAt?: string;
-  lastProcessStatus?: 'success' | 'failure' | 'skipped';
-  lastMessage?: string;
-  updatedAt: string;
-  dynamoTTL: number;
-}
-
 export interface UserProcessingLog {
   logId: string;
   userId: string;
