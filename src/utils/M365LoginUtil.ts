@@ -78,7 +78,18 @@ export class M365LoginUtil {
         console.log('➡️ Selected "No" to "Stay signed in?"');
       }
 
-      await new Promise((resolve) => setTimeout(resolve, 5000));
+      // Wait for OAuth redirect chain to finish by polling the URL
+      try {
+        await page.waitForFunction(
+          `(() => {
+            const h = document.location.hostname;
+            return h.endsWith('microsoft.com') && !h.includes('login') && !h.includes('live.com');
+          })()`,
+          { timeout: 30000 },
+        );
+      } catch {
+        // Timeout — proceed with whatever URL we landed on
+      }
 
       // Step 7: Verify login success
       const finalUrl = page.url();
@@ -87,20 +98,23 @@ export class M365LoginUtil {
       let loginSuccess = false;
       try {
         const parsedUrl = new URL(finalUrl);
-        loginSuccess = parsedUrl.protocol === 'https:' && parsedUrl.hostname === 'www.microsoft.com';
+        loginSuccess =
+          parsedUrl.protocol === 'https:' && parsedUrl.hostname.endsWith('microsoft.com') && !parsedUrl.hostname.includes('login');
       } catch {
         loginSuccess = false;
       }
+
+      // Check for specific login error elements (not broad role="alert" which matches non-error UI)
       let loginError = null;
       try {
-        loginError = await page.$('div.error, div[role="alert"]');
+        loginError = await page.$('#usernameError, #passwordError, #idTD_Error, #idA_IL_ForgotPassword0');
       } catch {
         // Execution context can be destroyed by a page navigation (e.g., Microsoft SPA redirect).
         // If the URL already confirms we landed on microsoft.com, this is a false negative.
       }
 
       const success = loginSuccess && !loginError;
-      console.log(success ? '✅ Sign-in was successful' : '❌ Sign-in failed');
+      console.log(success ? '✅ Sign-in was successful' : `❌ Sign-in failed (urlOk=${loginSuccess}, errorElement=${!!loginError})`);
 
       return {
         success,
