@@ -98,8 +98,9 @@ export class M365LoginUtil {
       let loginSuccess = false;
       try {
         const parsedUrl = new URL(finalUrl);
-        loginSuccess =
-          parsedUrl.protocol === 'https:' && parsedUrl.hostname.endsWith('microsoft.com') && !parsedUrl.hostname.includes('login');
+        const hostname = parsedUrl.hostname.toLowerCase();
+        const isMicrosoftHost = hostname === 'microsoft.com' || hostname.endsWith('.microsoft.com');
+        loginSuccess = parsedUrl.protocol === 'https:' && isMicrosoftHost && !hostname.includes('login');
       } catch {
         loginSuccess = false;
       }
