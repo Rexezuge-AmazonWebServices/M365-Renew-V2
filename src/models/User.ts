@@ -6,6 +6,7 @@ export interface User {
   salt: string;
   status: 'active' | 'disabled' | 'locked';
   nextProcessingAfter?: number;
+  consecutiveFailures?: number;
   createdAt: string;
   updatedAt: string;
 }

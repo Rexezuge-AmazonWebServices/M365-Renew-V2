@@ -94,17 +94,20 @@ export class UserDAO {
     return users.length > 0 ? users[0] : null;
   }
 
-  async updateNextProcessingAfter(userId: string, nextProcessingAfter: number): Promise<void> {
+  async updateProcessingSchedule(userId: string, nextProcessingAfter: number, consecutiveFailures: number): Promise<void> {
     await this.client.send(
       new UpdateCommand({
         TableName: this.tableName,
         Key: { userId },
-        UpdateExpression: 'SET #nextProcessingAfter = :nextProcessingAfter, updatedAt = :updatedAt',
+        UpdateExpression:
+          'SET #nextProcessingAfter = :nextProcessingAfter, #consecutiveFailures = :consecutiveFailures, updatedAt = :updatedAt',
         ExpressionAttributeNames: {
           '#nextProcessingAfter': 'nextProcessingAfter',
+          '#consecutiveFailures': 'consecutiveFailures',
         },
         ExpressionAttributeValues: {
           ':nextProcessingAfter': nextProcessingAfter,
+          ':consecutiveFailures': consecutiveFailures,
           ':updatedAt': new Date().toISOString(),
         },
       }),

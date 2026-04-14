@@ -27,7 +27,7 @@ async function migrateUsers(userDAO: UserDAO, stateDAO: ProcessingStateDAO): Pro
       if (oldState?.lastProcessedAt && oldState.lastProcessStatus) {
         await stateDAO.upsertState(expectedId, oldState.lastProcessStatus, oldState.lastMessage);
         const nextAfter = Math.floor(new Date(oldState.lastProcessedAt).getTime() / 1000) + minIntervalHours * 3600;
-        await userDAO.updateNextProcessingAfter(expectedId, nextAfter);
+        await userDAO.updateProcessingSchedule(expectedId, nextAfter, 0);
       }
 
       await userDAO.deleteUser(user.userId);
@@ -44,7 +44,7 @@ async function migrateUsers(userDAO: UserDAO, stateDAO: ProcessingStateDAO): Pro
       } else {
         nextProcessingAfter = 0;
       }
-      await userDAO.updateNextProcessingAfter(user.userId, nextProcessingAfter);
+      await userDAO.updateProcessingSchedule(user.userId, nextProcessingAfter, 0);
       console.log(`✅ Backfilled nextProcessingAfter for user ${user.userId}`);
     }
   }
@@ -102,10 +102,19 @@ export const processUsers = async (_event: ScheduledEvent, _context: Context): P
       await logDAO.createLog(user.userId, 'failure', errorMessage);
     }
 
-    // Push back nextProcessingAfter so this user isn't picked up again until the interval elapses
+    // Schedule next processing: normal interval on success, exponential backoff on failure
     const minIntervalHours = parseInt(process.env.MIN_PROCESSING_INTERVAL_HOURS || '25');
-    const nextProcessingAfter = Math.floor(Date.now() / 1000) + minIntervalHours * 3600;
-    await userDAO.updateNextProcessingAfter(user.userId, nextProcessingAfter);
+    const nowEpoch = Math.floor(Date.now() / 1000);
+
+    if (status === 'success') {
+      await userDAO.updateProcessingSchedule(user.userId, nowEpoch + minIntervalHours * 3600, 0);
+    } else {
+      const failures = (user.consecutiveFailures || 0) + 1;
+      const baseCooldownSeconds = 3600;
+      const maxCooldownSeconds = minIntervalHours * 3600;
+      const cooldownSeconds = Math.min(baseCooldownSeconds * Math.pow(2, failures - 1), maxCooldownSeconds);
+      await userDAO.updateProcessingSchedule(user.userId, nowEpoch + cooldownSeconds, failures);
+    }
 
     // Send notification via SNS
     await sendNotificationMessage(user.userId, status, resultMessage);
