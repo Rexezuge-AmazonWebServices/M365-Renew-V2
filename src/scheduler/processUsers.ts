@@ -6,33 +6,47 @@ import { decryptData } from '../crypto/aes-gcm.js';
 import { M365LoginUtil } from '../utils/M365LoginUtil.js';
 import { SNSClient, PublishCommand } from '@aws-sdk/client-sns';
 
-async function migrateOldSchemaUsers(userDAO: UserDAO, stateDAO: ProcessingStateDAO): Promise<void> {
+async function migrateUsers(userDAO: UserDAO, stateDAO: ProcessingStateDAO): Promise<void> {
   const key = process.env.AES_ENCRYPTION_KEY;
   if (!key) return;
 
   const users = await userDAO.getAllActiveUsers();
+  const minIntervalHours = parseInt(process.env.MIN_PROCESSING_INTERVAL_HOURS || '25');
 
   for (const user of users) {
     const email = await decryptData(user.encryptedEmailAddress, key, user.salt);
     const expectedId = await UserDAO.generateUserId(email);
 
-    if (user.userId === expectedId) continue;
+    // Migrate old-schema users (random UUID → deterministic hash)
+    if (user.userId !== expectedId) {
+      console.log(`🔄 Migrating user ${user.userId} → ${expectedId}`);
 
-    console.log(`🔄 Migrating user ${user.userId} → ${expectedId}`);
+      await userDAO.createUser(expectedId, user.encryptedEmailAddress, user.encryptedPassword, user.encryptedTotpKey, user.salt);
 
-    // Create new record with the deterministic ID
-    await userDAO.createUser(expectedId, user.encryptedEmailAddress, user.encryptedPassword, user.encryptedTotpKey, user.salt);
+      const oldState = await stateDAO.getState(user.userId);
+      if (oldState?.lastProcessedAt && oldState.lastProcessStatus) {
+        await stateDAO.upsertState(expectedId, oldState.lastProcessStatus, oldState.lastMessage);
+        const nextAfter = Math.floor(new Date(oldState.lastProcessedAt).getTime() / 1000) + minIntervalHours * 3600;
+        await userDAO.updateNextProcessingAfter(expectedId, nextAfter);
+      }
 
-    // Migrate processing state
-    const oldState = await stateDAO.getState(user.userId);
-    if (oldState?.lastProcessedAt && oldState.lastProcessStatus) {
-      await stateDAO.upsertState(expectedId, oldState.lastProcessStatus, oldState.lastMessage);
+      await userDAO.deleteUser(user.userId);
+      console.log(`✅ Migrated user ${user.userId} → ${expectedId}`);
+      continue;
     }
 
-    // Delete old record
-    await userDAO.deleteUser(user.userId);
-
-    console.log(`✅ Migrated user ${user.userId} → ${expectedId}`);
+    // Backfill nextProcessingAfter for existing users missing it
+    if (user.nextProcessingAfter == null) {
+      const state = await stateDAO.getState(user.userId);
+      let nextProcessingAfter: number;
+      if (state?.lastProcessedAt) {
+        nextProcessingAfter = Math.floor(new Date(state.lastProcessedAt).getTime() / 1000) + minIntervalHours * 3600;
+      } else {
+        nextProcessingAfter = 0;
+      }
+      await userDAO.updateNextProcessingAfter(user.userId, nextProcessingAfter);
+      console.log(`✅ Backfilled nextProcessingAfter for user ${user.userId}`);
+    }
   }
 }
 
@@ -44,8 +58,8 @@ export const processUsers = async (_event: ScheduledEvent, _context: Context): P
   const logDAO = new ProcessingLogDAO();
 
   try {
-    // Migrate any old-schema users (random UUID → deterministic hash)
-    await migrateOldSchemaUsers(userDAO, stateDAO);
+    // Migrate old-schema users and backfill nextProcessingAfter
+    await migrateUsers(userDAO, stateDAO);
 
     // Get next user for processing
     const user = await userDAO.getNextUserForProcessing();
@@ -87,6 +101,11 @@ export const processUsers = async (_event: ScheduledEvent, _context: Context): P
       await stateDAO.upsertState(user.userId, 'failure', errorMessage);
       await logDAO.createLog(user.userId, 'failure', errorMessage);
     }
+
+    // Push back nextProcessingAfter so this user isn't picked up again until the interval elapses
+    const minIntervalHours = parseInt(process.env.MIN_PROCESSING_INTERVAL_HOURS || '25');
+    const nextProcessingAfter = Math.floor(Date.now() / 1000) + minIntervalHours * 3600;
+    await userDAO.updateNextProcessingAfter(user.userId, nextProcessingAfter);
 
     // Send notification via SNS
     await sendNotificationMessage(user.userId, status, resultMessage);

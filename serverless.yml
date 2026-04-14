@@ -64,6 +64,12 @@ resources:
                     - 'Fn::GetAtt':
                         - UsersTable
                         - Arn
+                    - 'Fn::Join':
+                        - ''
+                        - - 'Fn::GetAtt':
+                              - UsersTable
+                              - Arn
+                          - '/index/*'
                     - 'Fn::GetAtt':
                         - ProcessingStateTable
                         - Arn
@@ -86,6 +92,10 @@ resources:
         AttributeDefinitions:
           - AttributeName: userId
             AttributeType: S
+          - AttributeName: status
+            AttributeType: S
+          - AttributeName: nextProcessingAfter
+            AttributeType: N
         KeySchema:
           - AttributeName: userId
             KeyType: HASH
@@ -93,6 +103,18 @@ resources:
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
+        GlobalSecondaryIndexes:
+          - IndexName: StatusNextProcessingIndex
+            KeySchema:
+              - AttributeName: status
+                KeyType: HASH
+              - AttributeName: nextProcessingAfter
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+            ProvisionedThroughput:
+              ReadCapacityUnits: 1
+              WriteCapacityUnits: 1
     ProcessingStateTable:
       Type: 'AWS::DynamoDB::Table'
       Properties:

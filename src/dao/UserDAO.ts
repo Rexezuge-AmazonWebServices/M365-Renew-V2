@@ -1,5 +1,13 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, PutCommand, GetCommand, ScanCommand, UpdateCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
+import {
+  DynamoDBDocumentClient,
+  PutCommand,
+  GetCommand,
+  QueryCommand,
+  ScanCommand,
+  UpdateCommand,
+  DeleteCommand,
+} from '@aws-sdk/lib-dynamodb';
 import { User } from '../models/User.js';
 
 export class UserDAO {
@@ -35,6 +43,7 @@ export class UserDAO {
       encryptedTotpKey,
       salt,
       status: 'active',
+      nextProcessingAfter: 0,
       createdAt: now,
       updatedAt: now,
     };
@@ -61,71 +70,45 @@ export class UserDAO {
   }
 
   async getNextUserForProcessing(): Promise<User | null> {
-    // Get all active users
+    const nowEpoch = Math.floor(Date.now() / 1000);
+
     const result = await this.client.send(
-      new ScanCommand({
+      new QueryCommand({
         TableName: this.tableName,
-        FilterExpression: '#status = :status',
+        IndexName: 'StatusNextProcessingIndex',
+        KeyConditionExpression: '#status = :status AND #nextProcessingAfter <= :now',
         ExpressionAttributeNames: {
           '#status': 'status',
+          '#nextProcessingAfter': 'nextProcessingAfter',
         },
         ExpressionAttributeValues: {
           ':status': 'active',
+          ':now': nowEpoch,
         },
+        ScanIndexForward: true,
+        Limit: 1,
       }),
     );
 
-    const activeUsers = (result.Items as User[]) || [];
-    if (activeUsers.length === 0) {
-      return null;
-    }
+    const users = (result.Items as User[]) || [];
+    return users.length > 0 ? users[0] : null;
+  }
 
-    // Get processing states for all users
-    const processingStateDAO = new (await import('./ProcessingStateDAO.js')).ProcessingStateDAO();
-    const userStates = await Promise.all(
-      activeUsers.map(async (user) => ({
-        user,
-        state: await processingStateDAO.getState(user.userId),
-      })),
+  async updateNextProcessingAfter(userId: string, nextProcessingAfter: number): Promise<void> {
+    await this.client.send(
+      new UpdateCommand({
+        TableName: this.tableName,
+        Key: { userId },
+        UpdateExpression: 'SET #nextProcessingAfter = :nextProcessingAfter, updatedAt = :updatedAt',
+        ExpressionAttributeNames: {
+          '#nextProcessingAfter': 'nextProcessingAfter',
+        },
+        ExpressionAttributeValues: {
+          ':nextProcessingAfter': nextProcessingAfter,
+          ':updatedAt': new Date().toISOString(),
+        },
+      }),
     );
-
-    // Filter users based on processing criteria
-    const now = new Date();
-    const minIntervalHours = parseInt(process.env.MIN_PROCESSING_INTERVAL_HOURS || '25');
-
-    const eligibleUsers = userStates.filter(({ user: _user, state }) => {
-      // If never processed, user is eligible
-      if (!state?.lastProcessedAt) {
-        return true;
-      }
-
-      // Check if enough time has passed since last processing
-      const lastProcessed = new Date(state.lastProcessedAt);
-      const hoursSinceLastProcessing = (now.getTime() - lastProcessed.getTime()) / (1000 * 60 * 60);
-
-      return hoursSinceLastProcessing >= minIntervalHours;
-    });
-
-    if (eligibleUsers.length === 0) {
-      return null;
-    }
-
-    // Sort by priority: never processed first, then by oldest last processed
-    eligibleUsers.sort((a, b) => {
-      // Never processed users get highest priority
-      if (!a.state?.lastProcessedAt && b.state?.lastProcessedAt) return -1;
-      if (a.state?.lastProcessedAt && !b.state?.lastProcessedAt) return 1;
-
-      // If both have been processed, prioritize oldest
-      if (a.state?.lastProcessedAt && b.state?.lastProcessedAt) {
-        return new Date(a.state.lastProcessedAt).getTime() - new Date(b.state.lastProcessedAt).getTime();
-      }
-
-      // If neither processed, sort by creation date (oldest first)
-      return new Date(a.user.createdAt).getTime() - new Date(b.user.createdAt).getTime();
-    });
-
-    return eligibleUsers[0].user;
   }
 
   async getAllActiveUsers(): Promise<User[]> {

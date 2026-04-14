@@ -5,6 +5,7 @@ export interface User {
   encryptedTotpKey: string;
   salt: string;
   status: 'active' | 'disabled' | 'locked';
+  nextProcessingAfter?: number;
   createdAt: string;
   updatedAt: string;
 }
