@@ -13,7 +13,7 @@
     "tsc": "tsc --noemit"
   },
   "dependencies": {
-    "@aws-sdk/client-dynamodb": "^3.1029.x",
+    "@aws-sdk/client-dynamodb": "^3.1030.x",
     "@aws-sdk/client-sns": "^3.1029.x",
     "@aws-sdk/lib-dynamodb": "^3.1029.x",
     "@sparticuz/chromium": "^147.0.x",
