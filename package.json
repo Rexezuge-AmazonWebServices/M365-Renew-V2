@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.1030.x",
-    "@aws-sdk/client-sns": "^3.1029.x",
+    "@aws-sdk/client-sns": "^3.1031.x",
     "@aws-sdk/lib-dynamodb": "^3.1029.x",
     "@sparticuz/chromium": "^147.0.x",
     "otplib": "^13.4.x",
