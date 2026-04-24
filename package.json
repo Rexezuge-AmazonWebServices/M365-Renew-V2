@@ -20,7 +20,7 @@
     "otplib": "^13.4.x",
     "puppeteer-core": "^24.41.x",
     "swagger-ui-dist": "^5.32.x",
-    "uuid": "^13.0.x"
+    "uuid": "^14.0.x"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.x",
