@@ -5,6 +5,7 @@ import { TOTP } from 'otplib';
 import { createGuardrails } from '@otplib/core';
 import { crypto } from '@otplib/plugin-crypto-noble';
 import { ScureBase32Plugin } from '@otplib/plugin-base32-scure';
+import type { Page } from 'puppeteer-core';
 
 export interface LoginResult {
   success: boolean;
@@ -58,25 +59,8 @@ export class M365LoginUtil {
       console.log('➡️ Entered OTP.');
       await new Promise((resolve) => setTimeout(resolve, 3000));
 
-      // Step 5: Handle TOU if present
-      const currentUrl = page.url();
-      if (currentUrl.startsWith('https://account.live.com/tou/accrue')) {
-        const acceptTouSelector = '[data-testid="primaryButton"]';
-        const touButton = await page.$(acceptTouSelector);
-        if (touButton) {
-          await page.click(acceptTouSelector);
-          console.log('➡️ Accepted terms of use.');
-          await new Promise((resolve) => setTimeout(resolve, 3000));
-        }
-      }
-
-      // Step 6: Handle "Stay signed in?" prompt
-      const staySignedInSelector = '[data-testid="secondaryButton"]';
-      const staySignedInButton = await page.$(staySignedInSelector);
-      if (staySignedInButton) {
-        await page.click(staySignedInSelector);
-        console.log('➡️ Selected "No" to "Stay signed in?"');
-      }
+      // Step 5: Handle post-auth prompts that can appear in sequence.
+      await this.handlePostAuthPrompts(page);
 
       // Wait for OAuth redirect chain to finish by polling the URL
       try {
@@ -130,5 +114,52 @@ export class M365LoginUtil {
         await browser.close();
       }
     }
+  }
+
+  private static async handlePostAuthPrompts(page: Page): Promise<void> {
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const currentUrl = page.url();
+
+      if (currentUrl.startsWith('https://account.live.com/tou/accrue')) {
+        const acceptedTou = await this.clickIfPresent(page, '[data-testid="primaryButton"]', '➡️ Accepted terms of use.');
+        if (acceptedTou) {
+          await new Promise((resolve) => setTimeout(resolve, 3000));
+          continue;
+        }
+      }
+
+      const confirmedSecurityInfo = await this.clickIfPresent(
+        page,
+        '#iLooksGood',
+        '➡️ Confirmed security info is still accurate.',
+      );
+      if (confirmedSecurityInfo) {
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+        continue;
+      }
+
+      const declinedStaySignedIn = await this.clickIfPresent(
+        page,
+        '[data-testid="secondaryButton"]',
+        '➡️ Selected "No" to "Stay signed in?"',
+      );
+      if (declinedStaySignedIn) {
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+        continue;
+      }
+
+      break;
+    }
+  }
+
+  private static async clickIfPresent(page: Page, selector: string, logMessage: string): Promise<boolean> {
+    const button = await page.$(selector);
+    if (!button) {
+      return false;
+    }
+
+    await page.click(selector);
+    console.log(logMessage);
+    return true;
   }
 }
