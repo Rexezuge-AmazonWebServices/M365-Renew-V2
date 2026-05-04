@@ -71,7 +71,7 @@ export class M365LoginUtil {
             const h = document.location.hostname;
             return h.endsWith('microsoft.com') && !h.includes('login') && !h.includes('live.com');
           })()`,
-          { timeout: 30000 },
+          { timeout: 50000 },
         );
       } catch {
         // Timeout — proceed with whatever URL we landed on
