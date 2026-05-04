@@ -12,7 +12,7 @@ export class ProcessingLogDAO {
     this.tableName = process.env.PROCESSING_LOG_TABLE || 'processing-log';
   }
 
-  async createLog(userId: string, status: 'success' | 'failure' | 'skipped', message?: string): Promise<void> {
+  async createLog(userId: string, status: 'success' | 'failure' | 'skipped', message?: string, screenshotBase64?: string): Promise<void> {
     const uuid = await import('uuid');
     const uuidv4 = uuid.v4;
     const logId = uuidv4();
@@ -25,6 +25,7 @@ export class ProcessingLogDAO {
       processedAt: now,
       processStatus: status,
       message,
+      screenshotBase64,
       updatedAt: now,
       dynamoTTL: fiveYearsFromNow,
     };

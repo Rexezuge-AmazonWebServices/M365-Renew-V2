@@ -41,7 +41,7 @@ export const processUsers = async (_event: ScheduledEvent, _context: Context): P
       status = loginResult.success ? 'success' : 'failure';
       resultMessage = loginResult.success ? 'Login successful' : loginResult.errorMessage || 'Login failed';
 
-      await logDAO.createLog(user.userId, status, resultMessage);
+      await logDAO.createLog(user.userId, status, resultMessage, loginResult.screenshotBase64);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       status = 'failure';

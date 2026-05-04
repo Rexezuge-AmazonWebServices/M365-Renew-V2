@@ -17,6 +17,7 @@ export interface UserProcessingLog {
   processedAt: string;
   processStatus: 'success' | 'failure' | 'skipped';
   message?: string;
+  screenshotBase64?: string;
   updatedAt: string;
   dynamoTTL: number;
 }

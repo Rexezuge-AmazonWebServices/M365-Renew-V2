@@ -10,6 +10,7 @@ import type { Page } from 'puppeteer-core';
 export interface LoginResult {
   success: boolean;
   errorMessage?: string;
+  screenshotBase64?: string;
 }
 
 export class M365LoginUtil {
@@ -17,6 +18,7 @@ export class M365LoginUtil {
 
   public static async login(email: string, password: string, totpKey: string): Promise<LoginResult> {
     let browser;
+    let page: Page | null = null;
 
     try {
       browser = await puppeteer.launch({
@@ -26,7 +28,7 @@ export class M365LoginUtil {
         ignoreDefaultArgs: ['--disable-extensions'],
       });
 
-      const page = await browser.newPage();
+      page = await browser.newPage();
 
       // Step 1: Navigate to login page
       await page.goto(this.M365_LOGIN_URL, { waitUntil: 'networkidle2' });
@@ -101,14 +103,34 @@ export class M365LoginUtil {
       const success = loginSuccess && !loginError;
       console.log(success ? '✅ Sign-in was successful' : `❌ Sign-in failed (urlOk=${loginSuccess}, errorElement=${!!loginError})`);
 
+      let screenshotBase64: string | undefined;
+      if (!success && page) {
+        try {
+          screenshotBase64 = await page.screenshot({ encoding: 'base64', type: 'png' });
+        } catch {
+          // Screenshot failed, continue without it
+        }
+      }
+
       return {
         success,
         errorMessage: success ? undefined : 'Login failed - invalid credentials or authentication error',
+        screenshotBase64,
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error during login process';
       console.error('Login process failed:', error);
-      return { success: false, errorMessage };
+
+      let screenshotBase64: string | undefined;
+      if (page) {
+        try {
+          screenshotBase64 = await page.screenshot({ encoding: 'base64', type: 'png' });
+        } catch {
+          // Screenshot failed, continue without it
+        }
+      }
+
+      return { success: false, errorMessage, screenshotBase64 };
     } finally {
       if (browser) {
         await browser.close();
