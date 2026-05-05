@@ -17,7 +17,6 @@
     "@aws-sdk/client-sns": "^3.1041.x",
     "@aws-sdk/lib-dynamodb": "^3.1041.x",
     "@sparticuz/chromium": "^148.0.x",
-    "otplib": "^13.4.x",
     "puppeteer-core": "^24.42.x",
     "swagger-ui-dist": "^5.32.x",
     "uuid": "^14.0.x"
