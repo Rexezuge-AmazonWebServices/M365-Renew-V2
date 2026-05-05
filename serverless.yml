@@ -17,6 +17,7 @@ provider:
     AES_ENCRYPTION_KEY: '${env:AES_ENCRYPTION_KEY}'
     SNS_TOPIC_ARN:
       Ref: NotificationTopic
+    TOTP_SERVER_BASE_URL: '${env:TOTP_SERVER_BASE_URL}'
 functions:
   api:
     handler: src/handler.api
