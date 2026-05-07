@@ -23,6 +23,7 @@ functions:
     handler: src/handler.api
     name: '${self:service}-API'
     timeout: 60
+    memorySize: 512
     reservedConcurrency: 0
     url:
       cors: true
@@ -30,6 +31,7 @@ functions:
     handler: src/handler.scheduler
     name: '${self:service}-Scheduler'
     timeout: 300
+    memorySize: 2048
     events:
       - schedule: rate(355 minutes)
 resources:
