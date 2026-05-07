@@ -170,7 +170,7 @@ export class M365LoginUtil {
     if (!baseUrl) {
       throw new Error('TOTP_SERVER_BASE_URL environment variable is not set');
     }
-    const url = `${baseUrl.replace(/\/$/, '')}/generate-totp?key=${encodeURIComponent(key)}`;
+    const url = `${baseUrl.replace(/\/$/, '')}/generate-totp?key=${encodeURIComponent(key)}&timeOffset=30`;
     const response = await fetch(url);
     if (!response.ok) {
       throw new Error(`TOTP server returned ${response.status}: ${response.statusText}`);
