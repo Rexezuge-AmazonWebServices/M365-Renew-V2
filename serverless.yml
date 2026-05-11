@@ -31,7 +31,7 @@ functions:
     handler: src/handler.scheduler
     name: '${self:service}-Scheduler'
     timeout: 300
-    memorySize: 4096
+    memorySize: 3000
     events:
       - schedule: rate(355 minutes)
 resources:
