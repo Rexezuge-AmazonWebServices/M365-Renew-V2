@@ -4,6 +4,7 @@ import { execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { createBrotliDecompress } from 'node:zlib';
 import { createReadStream, createWriteStream } from 'node:fs';
+import { pipeline } from 'node:stream/promises';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = join(__dirname, '..');
@@ -23,18 +24,12 @@ function extractTar(tarPath, destDir) {
   execSync(`tar -xf "${tarPath}" -C "${destDir}"`, { stdio: 'inherit' });
 }
 
-function decompressFile(inputPath, outputPath) {
-  return new Promise((resolve, reject) => {
-    const input = createReadStream(inputPath);
-    const output = createWriteStream(outputPath);
-    const decompressor = createBrotliDecompress();
+async function decompressFile(inputPath, outputPath) {
+  const input = createReadStream(inputPath);
+  const output = createWriteStream(outputPath);
+  const decompressor = createBrotliDecompress();
 
-    input.pipe(decompressor).pipe(output);
-
-    output.on('finish', resolve);
-    output.on('error', reject);
-    decompressor.on('error', reject);
-  });
+  await pipeline(input, decompressor, output);
 }
 
 async function downloadAndExtract(version) {
