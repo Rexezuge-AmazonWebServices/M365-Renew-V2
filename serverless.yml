@@ -144,8 +144,8 @@ resources:
         Endpoint: '${env:NOTIFICATION_EMAIL}'
 useDotenv: true
 package:
-  include:
-    - node_modules/@sparticuz/chromium-min/bin/chromium
+  patterns:
+    - node_modules/@sparticuz/chromium-min/bin/**
 build:
   esbuild:
     bundle: true
