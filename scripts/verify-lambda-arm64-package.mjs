@@ -1,10 +1,9 @@
 import { execFileSync } from 'node:child_process';
 import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { brotliDecompressSync } from 'node:zlib';
 
 const PACKAGE_DIR = '.serverless';
-const CHROMIUM_ENTRY_SUFFIX = 'node_modules/@sparticuz/chromium/bin/chromium.br';
+const CHROMIUM_ENTRY_SUFFIX = 'node_modules/@sparticuz/chromium-min/bin/chromium';
 const ELF_MAGIC = [0x7f, 0x45, 0x4c, 0x46];
 const EM_AARCH64 = 183;
 const EM_X86_64 = 62;
@@ -70,8 +69,7 @@ for (const zipPath of zipFiles) {
     continue;
   }
 
-  const compressedChromium = readArchiveEntry(zipPath, chromiumEntry);
-  const chromiumBinary = brotliDecompressSync(compressedChromium);
+  const chromiumBinary = readArchiveEntry(zipPath, chromiumEntry);
   const machine = getElfMachine(chromiumBinary);
   const architecture = describeMachine(machine);
 
