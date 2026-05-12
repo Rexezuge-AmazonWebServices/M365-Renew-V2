@@ -2,7 +2,7 @@ service: M365-Renew-V2
 provider:
   name: aws
   runtime: nodejs24.x
-  architecture: x86_64
+  architecture: arm64
   region: us-east-2
   versionFunctions: false
   stackName: '${self:service}'

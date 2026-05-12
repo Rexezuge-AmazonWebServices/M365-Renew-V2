@@ -6,8 +6,10 @@
     "clean": "rm -rf .build/ .serverless/ dist/",
     "build": "tsc && npm run test",
     "test": "vitest run",
+    "package:serverless": "serverless package",
     "predeploy": "npm run clean && npm run prettier && npm run lint && npm run build",
     "deploy": "serverless deploy",
+    "verify:lambda-arm64-package": "node ./scripts/verify-lambda-arm64-package.mjs",
     "prettier": "prettier --write .",
     "lint": "eslint --ignore-pattern dist/ --ignore-pattern .serverless/ --ext .ts,.tsx --fix .",
     "tsc": "tsc --noemit"
