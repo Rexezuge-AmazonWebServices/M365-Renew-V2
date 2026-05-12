@@ -11,16 +11,26 @@ export interface LoginResult {
 
 export class M365LoginUtil {
   private static readonly M365_LOGIN_URL = 'https://www.microsoft.com/cascadeauth/store/account/signin';
+  private static readonly DEFAULT_VIEWPORT = {
+    width: 1920,
+    height: 1080,
+    deviceScaleFactor: 1,
+    isMobile: false,
+    hasTouch: false,
+    isLandscape: true,
+  } as const;
 
   public static async login(email: string, password: string, totpKey: string): Promise<LoginResult> {
     let browser;
     let page: Page | null = null;
 
     try {
+      const headless = 'shell';
       browser = await puppeteer.launch({
-        args: chromium.args,
+        args: puppeteer.defaultArgs({ args: chromium.args, headless }),
         executablePath: await chromium.executablePath(),
-        headless: true,
+        defaultViewport: this.DEFAULT_VIEWPORT,
+        headless,
         ignoreDefaultArgs: ['--disable-extensions'],
       });
 
