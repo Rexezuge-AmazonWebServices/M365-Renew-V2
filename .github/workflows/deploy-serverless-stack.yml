@@ -40,7 +40,9 @@ jobs:
           SERVERLESS_LICENSE_KEY: ${{ secrets.SERVERLESS_LICENSE_KEY }}
 
       - name: Package Serverless Artifact
-        run: npm run package:serverless
+        run: npx serverless package
+        env:
+          SERVERLESS_LICENSE_KEY: ${{ secrets.SERVERLESS_LICENSE_KEY }}
 
       - name: Verify Packaged Chromium is Arm64
         run: npm run verify:lambda-arm64-package
