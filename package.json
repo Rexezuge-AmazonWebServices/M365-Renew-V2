@@ -10,6 +10,7 @@
     "predeploy": "npm run clean && npm run prettier && npm run lint && npm run build",
     "deploy": "serverless deploy",
     "verify:lambda-arm64-package": "node ./scripts/verify-lambda-arm64-package.mjs",
+    "download:chromium": "node ./scripts/download-chromium.mjs",
     "prettier": "prettier --write .",
     "lint": "eslint --ignore-pattern dist/ --ignore-pattern .serverless/ --ext .ts,.tsx --fix .",
     "tsc": "tsc --noemit"
@@ -18,7 +19,7 @@
     "@aws-sdk/client-dynamodb": "^3.1044.x",
     "@aws-sdk/client-sns": "^3.1044.x",
     "@aws-sdk/lib-dynamodb": "^3.1044.x",
-    "@sparticuz/chromium": "^148.0.x",
+    "@sparticuz/chromium-min": "^148.0.0",
     "puppeteer-core": "^24.42.x",
     "swagger-ui-dist": "^5.32.x",
     "uuid": "^14.0.x"
