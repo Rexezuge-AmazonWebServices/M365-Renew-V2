@@ -29,7 +29,7 @@ export class M365LoginUtil {
       const headless = 'shell';
       browser = await puppeteer.launch({
         args: puppeteer.defaultArgs({ args: chromium.args, headless }),
-        executablePath: path.resolve(__dirname, '../../node_modules/@sparticuz/chromium-min/bin/chromium'),
+        executablePath: path.resolve(__dirname, '/var/task/node_modules/@sparticuz/chromium-min/bin/chromium'),
         defaultViewport: this.DEFAULT_VIEWPORT,
         headless,
         ignoreDefaultArgs: ['--disable-extensions'],
