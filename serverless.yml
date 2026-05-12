@@ -149,4 +149,4 @@ build:
     minify: true
     sourcemap: false
     external:
-      - '@sparticuz/chromium'
+      - '@sparticuz/chromium-min'
