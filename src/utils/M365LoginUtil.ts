@@ -1,6 +1,6 @@
 import puppeteer from 'puppeteer-core';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const chromium = require('@sparticuz/chromium-min');
+const chromium = require('@sparticuz/chromium');
 import type { Page } from 'puppeteer-core';
 
 export interface LoginResult {
@@ -11,27 +11,16 @@ export interface LoginResult {
 
 export class M365LoginUtil {
   private static readonly M365_LOGIN_URL = 'https://www.microsoft.com/cascadeauth/store/account/signin';
-  private static readonly DEFAULT_VIEWPORT = {
-    width: 800,
-    height: 600,
-    deviceScaleFactor: 1,
-    isMobile: false,
-    hasTouch: false,
-    isLandscape: true,
-  } as const;
 
   public static async login(email: string, password: string, totpKey: string): Promise<LoginResult> {
     let browser;
     let page: Page | null = null;
 
     try {
-      const headless = 'shell';
-      const chromePath = await chromium.executablePath('/var/task/chromium');
       browser = await puppeteer.launch({
-        args: puppeteer.defaultArgs({ args: chromium.args, headless }),
-        executablePath: chromePath,
-        defaultViewport: this.DEFAULT_VIEWPORT,
-        headless,
+        args: chromium.args,
+        executablePath: await chromium.executablePath(),
+        headless: true,
         ignoreDefaultArgs: ['--disable-extensions'],
       });
 

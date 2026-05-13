@@ -2,7 +2,7 @@ service: M365-Renew-V2
 provider:
   name: aws
   runtime: nodejs24.x
-  architecture: arm64
+  architecture: x86_64
   region: us-east-2
   versionFunctions: false
   stackName: '${self:service}'
@@ -143,13 +143,10 @@ resources:
           Ref: NotificationTopic
         Endpoint: '${env:NOTIFICATION_EMAIL}'
 useDotenv: true
-package:
-  patterns:
-    - chromium/**
 build:
   esbuild:
     bundle: true
     minify: true
     sourcemap: false
     external:
-      - '@sparticuz/chromium-min'
+      - '@sparticuz/chromium'
