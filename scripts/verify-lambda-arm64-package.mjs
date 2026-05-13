@@ -3,10 +3,7 @@ import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 const PACKAGE_DIR = '.serverless';
-const CHROMIUM_ENTRY_SUFFIX = 'node_modules/@sparticuz/chromium-min/bin/chromium';
-const ELF_MAGIC = [0x7f, 0x45, 0x4c, 0x46];
-const EM_AARCH64 = 183;
-const EM_X86_64 = 62;
+const EXPECTED_CHROMIUM_FILES = ['al2023.tar.br', 'chromium.br', 'fonts.tar.br', 'swiftshader.tar.br'];
 
 function listZipFiles(packageDir) {
   return readdirSync(packageDir)
@@ -23,38 +20,6 @@ function listArchiveEntries(zipPath) {
     .filter(Boolean);
 }
 
-function readArchiveEntry(zipPath, entryPath) {
-  return execFileSync('unzip', ['-p', zipPath, entryPath], {
-    encoding: 'buffer',
-    maxBuffer: 256 * 1024 * 1024,
-  });
-}
-
-function getElfMachine(binaryBuffer) {
-  if (binaryBuffer.length < 20) {
-    throw new Error('Chromium binary is too small to be a valid ELF executable.');
-  }
-
-  for (let index = 0; index < ELF_MAGIC.length; index += 1) {
-    if (binaryBuffer[index] !== ELF_MAGIC[index]) {
-      throw new Error('Chromium binary is not an ELF executable.');
-    }
-  }
-
-  return binaryBuffer.readUInt16LE(18);
-}
-
-function describeMachine(machine) {
-  switch (machine) {
-    case EM_AARCH64:
-      return 'arm64';
-    case EM_X86_64:
-      return 'x86_64';
-    default:
-      return `unknown(${machine})`;
-  }
-}
-
 const zipFiles = listZipFiles(PACKAGE_DIR);
 
 if (zipFiles.length === 0) {
@@ -64,23 +29,38 @@ if (zipFiles.length === 0) {
 let verifiedArtifacts = 0;
 
 for (const zipPath of zipFiles) {
-  const chromiumEntry = listArchiveEntries(zipPath).find((entry) => entry.endsWith(CHROMIUM_ENTRY_SUFFIX));
-  if (!chromiumEntry) {
+  const entries = listArchiveEntries(zipPath);
+
+  const chromiumFolderEntry = entries.find((entry) => entry.startsWith('chromium/') && !entry.endsWith('/'));
+  if (!chromiumFolderEntry) {
+    console.log(`No chromium/ folder found in ${zipPath}.`);
     continue;
   }
 
-  const chromiumBinary = readArchiveEntry(zipPath, chromiumEntry);
-  const machine = getElfMachine(chromiumBinary);
-  const architecture = describeMachine(machine);
+  const chromiumFiles = entries.filter((entry) => entry.startsWith('chromium/') && EXPECTED_CHROMIUM_FILES.some((f) => entry.endsWith(f)));
 
-  if (machine !== EM_AARCH64) {
-    throw new Error(`Expected Arm64 Chromium in ${zipPath}, found ${architecture}.`);
+  const missingFiles = EXPECTED_CHROMIUM_FILES.filter(
+    (expected) => !chromiumFiles.some((f) => f.endsWith(expected))
+  );
+
+  if (missingFiles.length > 0) {
+    throw new Error(`Missing expected chromium files in ${zipPath}: ${missingFiles.join(', ')}`);
+  }
+
+  let totalSize = 0;
+  for (const file of chromiumFiles) {
+    const content = execFileSync('unzip', ['-p', zipPath, file], {
+      encoding: 'buffer',
+      maxBuffer: 256 * 1024 * 1024,
+    });
+    totalSize += content.length;
   }
 
   verifiedArtifacts += 1;
-  console.log(`Verified Arm64 Chromium in ${zipPath}.`);
+  console.log(`Verified arm64 Chromium pack (${(totalSize / 1024 / 1024).toFixed(2)} MB) in ${zipPath}.`);
+  console.log(`  Files: ${chromiumFiles.map((f) => f.split('/').pop()).join(', ')}`);
 }
 
 if (verifiedArtifacts === 0) {
-  throw new Error(`No packaged Chromium binary found in ${PACKAGE_DIR}.`);
+  throw new Error(`No packaged Chromium files found in ${PACKAGE_DIR}.`);
 }
