@@ -12,8 +12,8 @@ export interface LoginResult {
 export class M365LoginUtil {
   private static readonly M365_LOGIN_URL = 'https://www.microsoft.com/cascadeauth/store/account/signin';
   private static readonly DEFAULT_VIEWPORT = {
-    width: 1920,
-    height: 1080,
+    width: 800,
+    height: 600,
     deviceScaleFactor: 1,
     isMobile: false,
     hasTouch: false,
