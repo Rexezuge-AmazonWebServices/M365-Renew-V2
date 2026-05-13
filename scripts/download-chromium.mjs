@@ -1,4 +1,4 @@
-import { readFileSync, mkdirSync, existsSync, statSync, readdirSync, mvSync } from 'node:fs';
+import { readFileSync, mkdirSync, existsSync, statSync, readdirSync, cpSync, rmSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -49,13 +49,14 @@ async function downloadAndExtract(version) {
   console.log('Extracting tar archive...');
   extractTar(tempTarPath, tempDir);
 
-  const extractedFiles = readdirSync(tempDir);
+  const extractedFiles = readdirSync(tempDir).filter((f) => !f.endsWith('.tar'));
   console.log(`Extracted files: ${extractedFiles.join(', ')}`);
 
   for (const file of extractedFiles) {
     const src = join(tempDir, file);
     const dest = join(chromiumDir, file);
-    mvSync(src, dest);
+    cpSync(src, dest);
+    rmSync(src);
     const fileStats = statSync(dest);
     console.log(`  ${file}: ${(fileStats.size / 1024 / 1024).toFixed(2)} MB`);
   }
