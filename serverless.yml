@@ -145,7 +145,7 @@ resources:
 useDotenv: true
 package:
   patterns:
-    - node_modules/@sparticuz/chromium-min/bin/**
+    - chromium/**
 build:
   esbuild:
     bundle: true

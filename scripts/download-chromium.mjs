@@ -1,10 +1,7 @@
-import { readFileSync, mkdirSync, existsSync, statSync } from 'node:fs';
+import { readFileSync, mkdirSync, existsSync, statSync, readdirSync, mvSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { createBrotliDecompress } from 'node:zlib';
-import { createReadStream, createWriteStream } from 'node:fs';
-import { pipeline } from 'node:stream/promises';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = join(__dirname, '..');
@@ -24,22 +21,15 @@ function extractTar(tarPath, destDir) {
   execSync(`tar -xf "${tarPath}" -C "${destDir}"`, { stdio: 'inherit' });
 }
 
-async function decompressFile(inputPath, outputPath) {
-  const input = createReadStream(inputPath);
-  const output = createWriteStream(outputPath);
-  const decompressor = createBrotliDecompress();
-
-  await pipeline(input, decompressor, output);
-}
-
 async function downloadAndExtract(version) {
   const tarUrl = `https://github.com/Sparticuz/chromium/releases/download/v${version}/chromium-v${version}-pack.arm64.tar`;
-  const binDir = join(rootDir, 'node_modules/@sparticuz/chromium-min/bin');
+  const chromiumDir = join(rootDir, 'chromium');
   const tempDir = join(rootDir, '.chromium-temp');
 
-  if (!existsSync(binDir)) {
-    mkdirSync(binDir, { recursive: true });
+  if (existsSync(chromiumDir)) {
+    execSync(`rm -rf "${chromiumDir}"`);
   }
+  mkdirSync(chromiumDir, { recursive: true });
 
   if (existsSync(tempDir)) {
     execSync(`rm -rf "${tempDir}"`);
@@ -59,24 +49,20 @@ async function downloadAndExtract(version) {
   console.log('Extracting tar archive...');
   extractTar(tempTarPath, tempDir);
 
-  console.log('Decompressing chromium.br...');
-  const compressedChromium = join(tempDir, 'chromium.br');
-  const extractedChromium = join(binDir, 'chromium');
+  const extractedFiles = readdirSync(tempDir);
+  console.log(`Extracted files: ${extractedFiles.join(', ')}`);
 
-  await decompressFile(compressedChromium, extractedChromium);
-
-  execSync(`chmod +x "${extractedChromium}"`);
-
-  if (!existsSync(extractedChromium)) {
-    throw new Error('Chromium binary not found after decompression');
+  for (const file of extractedFiles) {
+    const src = join(tempDir, file);
+    const dest = join(chromiumDir, file);
+    mvSync(src, dest);
+    const fileStats = statSync(dest);
+    console.log(`  ${file}: ${(fileStats.size / 1024 / 1024).toFixed(2)} MB`);
   }
-
-  const binaryStats = statSync(extractedChromium);
-  console.log(`Chromium binary size: ${(binaryStats.size / 1024 / 1024).toFixed(2)} MB`);
 
   execSync(`rm -rf "${tempDir}"`);
 
-  console.log(`Arm64 Chromium v${version} successfully extracted to ${binDir}/chromium`);
+  console.log(`Arm64 Chromium v${version} packed files saved to ${chromiumDir}/`);
 }
 
 const version = getPackageVersion();

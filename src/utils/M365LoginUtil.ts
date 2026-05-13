@@ -1,4 +1,3 @@
-import path from 'node:path';
 import puppeteer from 'puppeteer-core';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const chromium = require('@sparticuz/chromium-min');
@@ -27,9 +26,10 @@ export class M365LoginUtil {
 
     try {
       const headless = 'shell';
+      const chromePath = await chromium.executablePath('/var/task/chromium');
       browser = await puppeteer.launch({
         args: puppeteer.defaultArgs({ args: chromium.args, headless }),
-        executablePath: path.resolve(__dirname, '/var/task/node_modules/@sparticuz/chromium-min/bin/chromium'),
+        executablePath: chromePath,
         defaultViewport: this.DEFAULT_VIEWPORT,
         headless,
         ignoreDefaultArgs: ['--disable-extensions'],
