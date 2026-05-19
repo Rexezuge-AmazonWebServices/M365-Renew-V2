@@ -67,7 +67,6 @@ Auto-populated by Serverless: `USERS_TABLE`, `PROCESSING_LOG_TABLE`, `SNS_TOPIC_
 
 Serverless Framework v4 → AWS `us-east-2`. CI/CD: push to main via `.github/workflows/deploy-serverless-stack.yml` (Node.js 24). Requires `DOT_ENV` GitHub variable and `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `SERVERLESS_LICENSE_KEY` secrets. esbuild bundles with minification; `@sparticuz/chromium` is external.
 
-
 ## Git Commit Messages
 
 - Use Conventional Commits with this subject format: `<TYPE>[optional scope]: <description>`.
