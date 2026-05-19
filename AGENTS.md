@@ -66,3 +66,26 @@ Auto-populated by Serverless: `USERS_TABLE`, `PROCESSING_LOG_TABLE`, `SNS_TOPIC_
 ## Deployment
 
 Serverless Framework v4 → AWS `us-east-2`. CI/CD: push to main via `.github/workflows/deploy-serverless-stack.yml` (Node.js 24). Requires `DOT_ENV` GitHub variable and `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `SERVERLESS_LICENSE_KEY` secrets. esbuild bundles with minification; `@sparticuz/chromium` is external.
+
+
+## Git Commit Messages
+
+- Use Conventional Commits with this subject format: `<TYPE>[optional scope]: <description>`.
+- Write the type in uppercase, for example `FIX`, `FEAT`, `DOCS`, `STYLE`, `REFACTOR`, `TEST`, `BUILD`, `CHORE`, `CI`, or `PERF`.
+- Write the optional scope in lowercase inside parentheses, for example `FEAT(runtime): Add Scheduled Job State`.
+- Write the description as concise human-readable words with spaces, capitalizing the first letter of each word, for example `DOCS: Latest Agents Context Reflection`, `STYLE: Standardize Python Formatting`, or `FEAT: Bootstrap JQAnywhere v0.1 Framework`.
+- When creating a commit from `main`, first switch to a new branch generated from the planned commit subject.
+- Use lowercase slash-separated branch names: `type/description` when there is no scope, or `type/scope/description` when there is a scope.
+- Convert the description to kebab-case for the branch, for example `docs/latest-agents-context-reflection`, `docs/agents/document-commit-standard`, or `feat/bootstrap/bootstrap-jqanywhere-v0.1-framework`.
+- Use Markdown for optional commit bodies, separated from the subject by a blank line.
+- Use optional footers after the body, separated by a blank line, following git trailer-style formatting.
+- Use `FIX` for bug patches and `FEAT` for new features; other conventional types are allowed when they better communicate intent.
+- Mark breaking API changes with `!` after the type or scope, or with a `BREAKING CHANGE: <description>` footer.
+
+```text
+<TYPE>[optional scope]: <description>
+
+[optional body in Markdown]
+
+[optional footer(s)]
+```
