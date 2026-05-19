@@ -141,11 +141,7 @@ export class M365LoginUtil {
         }
       }
 
-      const confirmedSecurityInfo = await this.clickIfPresent(
-        page,
-        '#iLooksGood',
-        '➡️ Confirmed security info is still accurate.',
-      );
+      const confirmedSecurityInfo = await this.clickIfPresent(page, '#iLooksGood', '➡️ Confirmed security info is still accurate.');
       if (confirmedSecurityInfo) {
         await new Promise((resolve) => setTimeout(resolve, 3000));
         continue;

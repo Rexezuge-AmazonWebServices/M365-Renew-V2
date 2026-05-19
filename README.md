@@ -78,6 +78,7 @@ npm run deploy
 ```
 
 This will:
+
 1. Clean previous builds
 2. Format code with Prettier
 3. Lint with auto-fix
@@ -89,24 +90,26 @@ This will:
 Pushes to `main` automatically deploy via GitHub Actions (`.github/workflows/deploy-serverless-stack.yml`).
 
 **Required GitHub Secrets:**
+
 - `AWS_ACCESS_KEY_ID`
 - `AWS_SECRET_ACCESS_KEY`
 - `SERVERLESS_LICENSE_KEY`
 
 **Required GitHub Variables:**
+
 - `DOT_ENV` (Base64-encoded `.env` content)
 
 ## API Endpoints
 
 Once deployed, the API Lambda exposes:
 
-| Method | Path | Description |
-|--------|------|-------------|
-| POST | `/api/admin/generate-key` | Generate a new AES-256 encryption key |
-| POST | `/api/credentials/store` | Store encrypted user credentials |
-| GET | `/api/internal/credentials/{userId}` | Retrieve decrypted credentials |
-| POST | `/api/auth/login` | Test M365 login manually |
-| GET | `/docs` | Swagger UI documentation |
+| Method | Path                                 | Description                           |
+| ------ | ------------------------------------ | ------------------------------------- |
+| POST   | `/api/admin/generate-key`            | Generate a new AES-256 encryption key |
+| POST   | `/api/credentials/store`             | Store encrypted user credentials      |
+| GET    | `/api/internal/credentials/{userId}` | Retrieve decrypted credentials        |
+| POST   | `/api/auth/login`                    | Test M365 login manually              |
+| GET    | `/docs`                              | Swagger UI documentation              |
 
 ## How It Works
 
