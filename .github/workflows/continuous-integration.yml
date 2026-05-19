@@ -120,3 +120,65 @@ jobs:
 
       - name: Package Serverless Stack
         run: npx serverless package
+
+  serverless-floci-smoke:
+    name: Serverless Floci Smoke
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_DEFAULT_REGION: us-east-2
+      AWS_REGION: us-east-2
+      AWS_ENDPOINT_URL: http://localhost:4566
+      AES_ENCRYPTION_KEY: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+      NOTIFICATION_EMAIL: ci@example.com
+      TOTP_SERVER_BASE_URL: https://example.com
+      SERVERLESS_LICENSE_KEY: ${{ secrets.SERVERLESS_LICENSE_KEY }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set Up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install Dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Start Floci
+        run: |
+          docker run -d --name floci \
+            -p 4566:4566 \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -e FLOCI_DEFAULT_REGION=us-east-2 \
+            -e FLOCI_STORAGE_MODE=memory \
+            -u root \
+            floci/floci:latest
+
+          for attempt in {1..60}; do
+            if curl --fail --silent http://localhost:4566/_localstack/health >/dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+
+          docker logs floci
+          exit 1
+
+      - name: Deploy Serverless Stack To Floci
+        run: npx serverless deploy
+
+      - name: Verify Deployed Resources
+        run: |
+          aws lambda list-functions
+          aws dynamodb describe-table --table-name M365-Renew-V2-Users
+          aws dynamodb describe-table --table-name M365-Renew-V2-Processing-Log
+          aws sns list-topics
+
+      - name: Show Floci Logs On Failure
+        if: failure()
+        run: docker logs floci
