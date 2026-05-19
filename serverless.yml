@@ -1,4 +1,6 @@
 service: M365-Renew-V2
+plugins:
+  - serverless-localstack
 provider:
   name: aws
   runtime: nodejs24.x
@@ -18,6 +20,7 @@ provider:
     SNS_TOPIC_ARN:
       Ref: NotificationTopic
     TOTP_SERVER_BASE_URL: '${env:TOTP_SERVER_BASE_URL}'
+    AWS_ENDPOINT_URL: '${env:M365_AWS_ENDPOINT_URL, env:AWS_ENDPOINT_URL, ""}'
 functions:
   api:
     handler: src/handler.api
@@ -150,3 +153,9 @@ build:
     sourcemap: false
     external:
       - '@sparticuz/chromium'
+custom:
+  localstack:
+    stages:
+      - local
+    host: http://localhost
+    edgePort: 4566

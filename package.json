@@ -30,6 +30,7 @@
     "globals": "^17.6.x",
     "prettier": "^3.8.x",
     "serverless": "^4.36.x",
+    "serverless-localstack": "^1.4.0",
     "typescript": "^6.0.x",
     "typescript-eslint": "^8.59.x",
     "vitest": "^4.1.6"
