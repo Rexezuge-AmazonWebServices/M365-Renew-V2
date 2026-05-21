@@ -23,7 +23,7 @@
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.x",
-    "@types/node": "^25.6.x",
+    "@types/node": "^25.9.x",
     "eslint": "^10.3.x",
     "eslint-config-prettier": "^10.1.x",
     "eslint-plugin-prettier": "^5.5.x",
