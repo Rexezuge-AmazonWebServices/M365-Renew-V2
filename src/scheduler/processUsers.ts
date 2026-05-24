@@ -28,6 +28,7 @@ export const processUsers = async (_event: ScheduledEvent, _context: Context): P
 
     let status: 'success' | 'failure';
     let resultMessage: string;
+    let logId: string;
 
     try {
       // Decrypt credentials
@@ -41,13 +42,13 @@ export const processUsers = async (_event: ScheduledEvent, _context: Context): P
       status = loginResult.success ? 'success' : 'failure';
       resultMessage = loginResult.success ? 'Login successful' : loginResult.errorMessage || 'Login failed';
 
-      await logDAO.createLog(user.userId, status, resultMessage, loginResult.screenshotBase64);
+      logId = await logDAO.createLog(user.userId, status, resultMessage, loginResult.screenshotBase64);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       status = 'failure';
       resultMessage = errorMessage;
 
-      await logDAO.createLog(user.userId, 'failure', errorMessage);
+      logId = await logDAO.createLog(user.userId, 'failure', errorMessage);
     }
 
     // Schedule next processing: normal interval on success, exponential backoff on failure
@@ -65,7 +66,7 @@ export const processUsers = async (_event: ScheduledEvent, _context: Context): P
     }
 
     // Send notification via SNS
-    await sendNotificationMessage(user.userId, status, resultMessage);
+    await sendNotificationMessage(user.userId, logId, status, resultMessage);
 
     console.log(`✅ Processed user ${user.userId}: ${status} - ${resultMessage}`);
   } catch (error) {
@@ -73,7 +74,7 @@ export const processUsers = async (_event: ScheduledEvent, _context: Context): P
   }
 };
 
-async function sendNotificationMessage(userId: string, status: 'success' | 'failure', message: string): Promise<void> {
+async function sendNotificationMessage(userId: string, logId: string, status: 'success' | 'failure', message: string): Promise<void> {
   const topicArn = process.env.SNS_TOPIC_ARN;
   if (!topicArn) {
     console.log('⚠️ No SNS topic ARN configured');
@@ -91,6 +92,8 @@ async function sendNotificationMessage(userId: string, status: 'success' | 'fail
       '',
       'This message serves as a formal record of the routine maintenance activity performed today. The operational details are listed below for documentation purposes.',
       '',
+      `- User ID: ${userId}`,
+      `- Log ID: ${logId}`,
       `- Execution Time: ${executionTime}`,
       `- Outcome: ${result}`,
       `- Additional Information: ${additionalInformation}`,
