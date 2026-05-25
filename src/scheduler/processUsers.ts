@@ -3,7 +3,8 @@ import { UserDAO } from '../dao/UserDAO.js';
 import { ProcessingLogDAO } from '../dao/ProcessingLogDAO.js';
 import { decryptData } from '../crypto/aes-gcm.js';
 import { M365LoginUtil } from '../utils/M365LoginUtil.js';
-import { SNSClient, PublishCommand } from '@aws-sdk/client-sns';
+import { createNotificationService } from '../notifications/createNotificationService.js';
+import { formatMaintenanceNotification } from '../notifications/formatMaintenanceNotification.js';
 
 export const processUsers = async (_event: ScheduledEvent, _context: Context): Promise<void> => {
   console.log('🔄 Starting user processing...');
@@ -65,58 +66,16 @@ export const processUsers = async (_event: ScheduledEvent, _context: Context): P
       await userDAO.updateProcessingSchedule(user.userId, nowEpoch + cooldownSeconds, failures);
     }
 
-    // Send notification via SNS
-    await sendNotificationMessage(user.userId, logId, status, resultMessage);
+    const notification = formatMaintenanceNotification({
+      userId: user.userId,
+      logId,
+      status,
+      message: resultMessage,
+    });
+    await createNotificationService().send(notification);
 
     console.log(`✅ Processed user ${user.userId}: ${status} - ${resultMessage}`);
   } catch (error) {
     console.error('❌ Error processing users:', error);
   }
 };
-
-async function sendNotificationMessage(userId: string, logId: string, status: 'success' | 'failure', message: string): Promise<void> {
-  const topicArn = process.env.SNS_TOPIC_ARN;
-  if (!topicArn) {
-    console.log('⚠️ No SNS topic ARN configured');
-    return;
-  }
-
-  try {
-    const snsClient: SNSClient = new SNSClient({ region: process.env.AWS_REGION || 'us-east-2' });
-
-    const executionTime: string = new Date().toISOString().replace('T', ' ').replace('Z', ' UTC');
-    const result: string = status === 'success' ? 'Completed' : 'Failed';
-    const additionalInformation: string = status === 'success' ? 'No irregularities were observed during the execution.' : message;
-    const messageBody: string = [
-      'Hello Boss Davis,',
-      '',
-      'This message serves as a formal record of the routine maintenance activity performed today. The operational details are listed below for documentation purposes.',
-      '',
-      `- User ID: ${userId}`,
-      `- Log ID: ${logId}`,
-      `- Execution Time: ${executionTime}`,
-      `- Outcome: ${result}`,
-      `- Additional Information: ${additionalInformation}`,
-      '',
-      'This log will be stored for future reference. Further entries of the same category will follow this format.',
-      '',
-      'Thank you.',
-      'John Doe',
-      'John.Doe.1000@example.com',
-      '',
-      '1249 Evergreen Ridge Cir',
-      'Northvale, CA 95248, USA',
-    ].join('\r\n');
-    const subject: string = `${result} - Maintenance Log: M365 Renew Task`;
-    const command: PublishCommand = new PublishCommand({
-      TopicArn: topicArn,
-      Subject: subject,
-      Message: messageBody,
-    });
-
-    await snsClient.send(command);
-    console.log('📧 Notification sent via SNS');
-  } catch (error) {
-    console.error('❌ Failed to send SNS notification:', error);
-  }
-}

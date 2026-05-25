@@ -17,6 +17,9 @@ provider:
     USERS_TABLE: '${self:service}-Users'
     PROCESSING_LOG_TABLE: '${self:service}-Processing-Log'
     AES_ENCRYPTION_KEY: '${env:AES_ENCRYPTION_KEY}'
+    NOTIFICATION_PROVIDER: '${env:NOTIFICATION_PROVIDER, "sns"}'
+    MAIL_MEOW_BASE_URL: '${env:MAIL_MEOW_BASE_URL, ""}'
+    MAIL_MEOW_API_KEY: '${env:MAIL_MEOW_API_KEY, ""}'
     SNS_TOPIC_ARN:
       Ref: NotificationTopic
     TOTP_SERVER_BASE_URL: '${env:TOTP_SERVER_BASE_URL}'
