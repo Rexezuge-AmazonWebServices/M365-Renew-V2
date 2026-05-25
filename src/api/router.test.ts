@@ -14,6 +14,9 @@ vi.mock('./routes/get-credentials.js', () => ({
 vi.mock('./routes/login.js', () => ({
   login: vi.fn().mockResolvedValue({ statusCode: 200, headers: {}, body: '{"mock":"login"}' }),
 }));
+vi.mock('./routes/get-processing-log.js', () => ({
+  getProcessingLog: vi.fn().mockResolvedValue({ statusCode: 200, headers: {}, body: '{"mock":"get-processing-log"}' }),
+}));
 vi.mock('./swagger.js', () => ({
   swaggerSpec: { openapi: '3.0.0', info: { title: 'test', version: '1.0' }, paths: {} },
 }));
@@ -91,6 +94,14 @@ describe('router', () => {
 
       expect(result.statusCode).toBe(200);
       expect(JSON.parse(result.body).mock).toBe('login');
+    });
+
+    it('should route GET /api/internal/processing-logs/{logId} to getProcessingLog', async () => {
+      const event = makeEvent({ httpMethod: 'GET', path: '/api/internal/processing-logs/log-123' });
+      const result = await router(event, mockContext);
+
+      expect(result.statusCode).toBe(200);
+      expect(JSON.parse(result.body).mock).toBe('get-processing-log');
     });
 
     it('should serve Swagger UI HTML at GET /docs', async () => {
@@ -172,6 +183,39 @@ describe('router', () => {
       const event = makeEvent({
         httpMethod: 'GET',
         path: '/api/internal/credentials/',
+      });
+      const result = await router(event, mockContext);
+
+      expect(result.statusCode).toBe(404);
+    });
+  });
+
+  describe('processing logs path matching', () => {
+    it('should match processing log path with UUID-like logId', async () => {
+      const event = makeEvent({
+        httpMethod: 'GET',
+        path: '/api/internal/processing-logs/a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+      });
+      const result = await router(event, mockContext);
+
+      expect(result.statusCode).toBe(200);
+      expect(JSON.parse(result.body).mock).toBe('get-processing-log');
+    });
+
+    it('should NOT match processing log path with trailing slash', async () => {
+      const event = makeEvent({
+        httpMethod: 'GET',
+        path: '/api/internal/processing-logs/log-123/',
+      });
+      const result = await router(event, mockContext);
+
+      expect(result.statusCode).toBe(404);
+    });
+
+    it('should NOT match processing log path without logId', async () => {
+      const event = makeEvent({
+        httpMethod: 'GET',
+        path: '/api/internal/processing-logs/',
       });
       const result = await router(event, mockContext);
 

@@ -1,5 +1,5 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, PutCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
 import { UserProcessingLog } from '../models/User.js';
 
 export class ProcessingLogDAO {
@@ -38,5 +38,16 @@ export class ProcessingLogDAO {
     );
 
     return logId;
+  }
+
+  async getLog(logId: string): Promise<UserProcessingLog | null> {
+    const result = await this.client.send(
+      new GetCommand({
+        TableName: this.tableName,
+        Key: { logId },
+      }),
+    );
+
+    return (result.Item as UserProcessingLog) || null;
   }
 }

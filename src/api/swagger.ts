@@ -70,6 +70,32 @@ export const swaggerSpec = {
         },
       },
     },
+    '/api/internal/processing-logs/{logId}': {
+      get: {
+        tags: ['Internal'],
+        summary: 'Get processing log detail',
+        description: 'Returns an HTML detail page for a processing log and renders the stored error screenshot when available.',
+        parameters: [
+          {
+            name: 'logId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Processing log detail page',
+            content: {
+              'text/html': {
+                schema: { type: 'string' },
+              },
+            },
+          },
+          '404': { description: 'Log not found' },
+        },
+      },
+    },
     '/api/auth/login': {
       post: {
         tags: ['Authentication'],
