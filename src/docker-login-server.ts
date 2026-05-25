@@ -74,8 +74,10 @@ const handleRequest = async (request: IncomingMessage, response: ServerResponse)
   }
 };
 
-http.createServer((request, response) => {
-  void handleRequest(request, response);
-}).listen(port, '0.0.0.0', () => {
-  console.log(`M365 login server listening on port ${port}`);
-});
+http
+  .createServer((request, response) => {
+    void handleRequest(request, response);
+  })
+  .listen(port, '0.0.0.0', () => {
+    console.log(`M365 login server listening on port ${port}`);
+  });
