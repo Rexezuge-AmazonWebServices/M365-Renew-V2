@@ -3,6 +3,7 @@ import { generateKey } from './routes/generate-key.js';
 import { storeCredentials } from './routes/store-credentials.js';
 import { getCredentials } from './routes/get-credentials.js';
 import { login } from './routes/login.js';
+import { getProcessingLog } from './routes/get-processing-log.js';
 import { swaggerSpec } from './swagger.js';
 
 export const router = async (event: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult> => {
@@ -35,6 +36,8 @@ export const router = async (event: APIGatewayProxyEvent, context: Context): Pro
       result = await storeCredentials(event, context);
     } else if (httpMethod === 'GET' && path.match(/^\/api\/internal\/credentials\/[^\/]+$/)) {
       result = await getCredentials(event, context);
+    } else if (httpMethod === 'GET' && path.match(/^\/api\/internal\/processing-logs\/[^\/]+$/)) {
+      result = await getProcessingLog(event, context);
     } else if (httpMethod === 'POST' && path === '/api/auth/login') {
       result = await login(event, context);
     } else if (httpMethod === 'GET' && path === '/docs') {
