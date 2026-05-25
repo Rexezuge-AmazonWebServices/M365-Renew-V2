@@ -1,0 +1,11 @@
+node_modules
+dist
+.build
+.serverless
+.git
+.github
+coverage
+npm-debug.log*
+Dockerfile
+.env
+.env.*
