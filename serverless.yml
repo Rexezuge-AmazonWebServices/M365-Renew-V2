@@ -1,6 +1,4 @@
 service: M365-Renew-V2
-plugins:
-  - serverless-localstack
 provider:
   name: aws
   runtime: nodejs24.x
@@ -42,6 +40,8 @@ functions:
 resources:
   - ${file(./serverless/resources/base.yml)}
   - ${file(./serverless/notifications/${env:NOTIFICATION_PROVIDER, "sns"}.yml):resources}
+plugins:
+  - serverless-localstack
 useDotenv: true
 build:
   esbuild:
