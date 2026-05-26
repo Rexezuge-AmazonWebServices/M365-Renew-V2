@@ -77,5 +77,6 @@ export const processUsers = async (_event: ScheduledEvent, _context: Context): P
     console.log(`✅ Processed user ${user.userId}: ${status} - ${resultMessage}`);
   } catch (error) {
     console.error('❌ Error processing users:', error);
+    throw error;
   }
 };
