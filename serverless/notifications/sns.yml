@@ -1,0 +1,30 @@
+environment:
+  SNS_TOPIC_ARN:
+    Ref: NotificationTopic
+resources:
+  Resources:
+    SnsPublishPolicy:
+      Type: 'AWS::IAM::Policy'
+      Properties:
+        PolicyName: SNSAccess
+        Roles:
+          - Ref: ExecutionRole
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - 'sns:Publish'
+              Resource:
+                Ref: NotificationTopic
+    NotificationTopic:
+      Type: 'AWS::SNS::Topic'
+      Properties:
+        TopicName: '${self:service}-Notifications'
+    NotificationSubscription:
+      Type: 'AWS::SNS::Subscription'
+      Properties:
+        Protocol: email
+        TopicArn:
+          Ref: NotificationTopic
+        Endpoint: '${env:NOTIFICATION_EMAIL}'

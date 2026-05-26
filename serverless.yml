@@ -20,8 +20,7 @@ provider:
     NOTIFICATION_PROVIDER: '${env:NOTIFICATION_PROVIDER, "sns"}'
     MAIL_MEOW_BASE_URL: '${env:MAIL_MEOW_BASE_URL, ""}'
     MAIL_MEOW_API_KEY: '${env:MAIL_MEOW_API_KEY, ""}'
-    SNS_TOPIC_ARN:
-      Ref: NotificationTopic
+    SNS_TOPIC_ARN: '${file(./serverless/notifications/${env:NOTIFICATION_PROVIDER, "sns"}.yml):environment.SNS_TOPIC_ARN}'
     TOTP_SERVER_BASE_URL: '${env:TOTP_SERVER_BASE_URL}'
     AWS_ENDPOINT_URL: '${env:M365_AWS_ENDPOINT_URL, env:AWS_ENDPOINT_URL, ""}'
 functions:
@@ -41,113 +40,8 @@ functions:
     events:
       - schedule: rate(280 minutes)
 resources:
-  Resources:
-    ExecutionRole:
-      Type: 'AWS::IAM::Role'
-      Properties:
-        RoleName: '${self:service}-ExecutionRole'
-        AssumeRolePolicyDocument:
-          Version: '2012-10-17'
-          Statement:
-            - Effect: Allow
-              Principal:
-                Service: lambda.amazonaws.com
-              Action: 'sts:AssumeRole'
-        ManagedPolicyArns:
-          - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
-        Policies:
-          - PolicyName: DynamoDBAccess
-            PolicyDocument:
-              Version: '2012-10-17'
-              Statement:
-                - Effect: Allow
-                  Action:
-                    - 'dynamodb:Query'
-                    - 'dynamodb:Scan'
-                    - 'dynamodb:GetItem'
-                    - 'dynamodb:PutItem'
-                    - 'dynamodb:UpdateItem'
-                    - 'dynamodb:DeleteItem'
-                  Resource:
-                    - 'Fn::GetAtt':
-                        - UsersTable
-                        - Arn
-                    - 'Fn::Join':
-                        - ''
-                        - - 'Fn::GetAtt':
-                              - UsersTable
-                              - Arn
-                          - '/index/*'
-                    - 'Fn::GetAtt':
-                        - ProcessingLogTable
-                        - Arn
-          - PolicyName: SNSAccess
-            PolicyDocument:
-              Version: '2012-10-17'
-              Statement:
-                - Effect: Allow
-                  Action:
-                    - 'sns:Publish'
-                  Resource:
-                    Ref: NotificationTopic
-    UsersTable:
-      Type: 'AWS::DynamoDB::Table'
-      Properties:
-        TableName: '${self:provider.environment.USERS_TABLE}'
-        AttributeDefinitions:
-          - AttributeName: userId
-            AttributeType: S
-          - AttributeName: status
-            AttributeType: S
-          - AttributeName: nextProcessingAfter
-            AttributeType: N
-        KeySchema:
-          - AttributeName: userId
-            KeyType: HASH
-        BillingMode: PROVISIONED
-        ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
-        GlobalSecondaryIndexes:
-          - IndexName: StatusNextProcessingIndex
-            KeySchema:
-              - AttributeName: status
-                KeyType: HASH
-              - AttributeName: nextProcessingAfter
-                KeyType: RANGE
-            Projection:
-              ProjectionType: ALL
-            ProvisionedThroughput:
-              ReadCapacityUnits: 1
-              WriteCapacityUnits: 1
-    ProcessingLogTable:
-      Type: 'AWS::DynamoDB::Table'
-      Properties:
-        TableName: '${self:provider.environment.PROCESSING_LOG_TABLE}'
-        AttributeDefinitions:
-          - AttributeName: logId
-            AttributeType: S
-        KeySchema:
-          - AttributeName: logId
-            KeyType: HASH
-        BillingMode: PROVISIONED
-        ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
-        TimeToLiveSpecification:
-          AttributeName: dynamoTTL
-          Enabled: true
-    NotificationTopic:
-      Type: 'AWS::SNS::Topic'
-      Properties:
-        TopicName: '${self:service}-Notifications'
-    NotificationSubscription:
-      Type: 'AWS::SNS::Subscription'
-      Properties:
-        Protocol: email
-        TopicArn:
-          Ref: NotificationTopic
-        Endpoint: '${env:NOTIFICATION_EMAIL}'
+  - ${file(./serverless/resources/base.yml)}
+  - ${file(./serverless/notifications/${env:NOTIFICATION_PROVIDER, "sns"}.yml):resources}
 useDotenv: true
 build:
   esbuild:

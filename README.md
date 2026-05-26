@@ -31,7 +31,7 @@ M365 Renew keeps your Microsoft 365 accounts active by automatically logging in 
 - **Scheduler Lambda**: Triggered by EventBridge, processes one user per run
 - **API Lambda**: HTTP endpoints for credential management (disabled by default)
 - **DynamoDB**: Stores encrypted credentials and processing logs
-- **SNS**: Sends email notifications on success/failure
+- **Notifications**: Sends execution summaries via the configured provider (`sns`, `mailmeow`, or `console`)
 
 ## Setup
 
@@ -50,9 +50,10 @@ cp .env.example .env
 ```
 
 ```
-AES_ENCRYPTION_KEY=    # Base64-encoded 256-bit key (generate via /api/admin/generate-key)
-NOTIFICATION_EMAIL=    # Email for SNS notifications
-TOTP_SERVER_BASE_URL=  # TOTP code generation service URL
+AES_ENCRYPTION_KEY=      # Base64-encoded 256-bit key (generate via /api/admin/generate-key)
+NOTIFICATION_PROVIDER=   # console, sns, or mailmeow. Defaults to sns.
+NOTIFICATION_EMAIL=      # Email for SNS or MailMeow notifications
+TOTP_SERVER_BASE_URL=    # TOTP code generation service URL
 ```
 
 ### Install Dependencies
@@ -84,6 +85,8 @@ This will:
 3. Lint with auto-fix
 4. Type-check and test
 5. Deploy the Serverless stack to `us-east-2`
+
+SNS topic, subscription, and publish permissions are deployed only when `NOTIFICATION_PROVIDER=sns`.
 
 ### CI/CD
 
@@ -117,7 +120,7 @@ Once deployed, the API Lambda exposes:
 2. **User ID Generation**: Deterministic SHA-256 hash of normalized email (lowered, trimmed), formatted as UUID-style hex.
 3. **Scheduled Processing**: EventBridge triggers the scheduler every 280 minutes. It queries for the next due user, decrypts credentials, and performs headless login.
 4. **Retry Logic**: Success schedules the next run in 25 hours. Failure applies exponential backoff (1hr, 2hr, 4hr...) up to 25 hours.
-5. **Notifications**: SNS sends an email summary of each execution.
+5. **Notifications**: The configured notification provider sends or logs a summary of each execution.
 
 ## Troubleshooting
 

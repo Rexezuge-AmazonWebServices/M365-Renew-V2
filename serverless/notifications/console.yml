@@ -1,0 +1,4 @@
+environment:
+  SNS_TOPIC_ARN: ''
+resources:
+  Resources: {}
