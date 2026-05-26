@@ -11,6 +11,8 @@ export interface LoginResult {
 
 export class M365LoginUtil {
   private static readonly M365_LOGIN_URL = 'https://www.microsoft.com/cascadeauth/store/account/signin';
+  private static readonly LOGIN_ERROR_SELECTOR = '#usernameError, #passwordError, #idTD_Error, #idA_IL_ForgotPassword0';
+  private static readonly DEFAULT_LOGIN_ERROR_MESSAGE = 'Login failed - invalid credentials or authentication error';
 
   public static async login(email: string, password: string, totpKey: string): Promise<LoginResult> {
     let browser;
@@ -83,16 +85,16 @@ export class M365LoginUtil {
       }
 
       // Check for specific login error elements (not broad role="alert" which matches non-error UI)
-      let loginError = null;
+      let loginErrorMessage: string | undefined;
       try {
-        loginError = await page.$('#usernameError, #passwordError, #idTD_Error, #idA_IL_ForgotPassword0');
+        loginErrorMessage = await this.getLoginErrorMessage(page);
       } catch {
         // Execution context can be destroyed by a page navigation (e.g., Microsoft SPA redirect).
         // If the URL already confirms we landed on microsoft.com, this is a false negative.
       }
 
-      const success = loginSuccess && !loginError;
-      console.log(success ? '✅ Sign-in was successful' : `❌ Sign-in failed (urlOk=${loginSuccess}, errorElement=${!!loginError})`);
+      const success = loginSuccess && !loginErrorMessage;
+      console.log(success ? '✅ Sign-in was successful' : `❌ Sign-in failed (urlOk=${loginSuccess}, errorElement=${!!loginErrorMessage})`);
 
       let screenshotBase64: string | undefined;
       if (!success && page) {
@@ -105,12 +107,15 @@ export class M365LoginUtil {
 
       return {
         success,
-        errorMessage: success ? undefined : 'Login failed - invalid credentials or authentication error',
+        errorMessage: success ? undefined : loginErrorMessage || this.DEFAULT_LOGIN_ERROR_MESSAGE,
         screenshotBase64,
       };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error during login process';
+      const browserErrorMessage = error instanceof Error ? error.message : 'Unknown error during login process';
       console.error('Login process failed:', error);
+
+      const loginErrorMessage = page ? await this.getLoginErrorMessage(page) : undefined;
+      const errorMessage = loginErrorMessage || browserErrorMessage;
 
       let screenshotBase64: string | undefined;
       if (page) {
@@ -173,6 +178,21 @@ export class M365LoginUtil {
     }
     const data = (await response.json()) as { otp: string };
     return data.otp;
+  }
+
+  private static async getLoginErrorMessage(page: Page): Promise<string | undefined> {
+    try {
+      const loginError = await page.$(this.LOGIN_ERROR_SELECTOR);
+      if (!loginError) {
+        return undefined;
+      }
+
+      const errorText = await loginError.evaluate((element) => element.textContent || '');
+      const normalizedErrorText = errorText.replace(/\s+/g, ' ').trim();
+      return normalizedErrorText || this.DEFAULT_LOGIN_ERROR_MESSAGE;
+    } catch {
+      return undefined;
+    }
   }
 
   private static async clickIfPresent(page: Page, selector: string, logMessage: string): Promise<boolean> {
