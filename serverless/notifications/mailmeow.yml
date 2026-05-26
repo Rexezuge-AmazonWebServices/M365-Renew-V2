@@ -1,5 +1,4 @@
 environment:
   SNS_TOPIC_ARN: ''
-  NOTIFICATION_EMAIL: '${env:NOTIFICATION_EMAIL}'
 resources:
   Resources: {}
