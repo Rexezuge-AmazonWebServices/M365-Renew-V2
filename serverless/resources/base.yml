@@ -1,0 +1,87 @@
+Resources:
+  ExecutionRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: '${self:service}-ExecutionRole'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+      Policies:
+        - PolicyName: DynamoDBAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'dynamodb:Query'
+                  - 'dynamodb:Scan'
+                  - 'dynamodb:GetItem'
+                  - 'dynamodb:PutItem'
+                  - 'dynamodb:UpdateItem'
+                  - 'dynamodb:DeleteItem'
+                Resource:
+                  - 'Fn::GetAtt':
+                      - UsersTable
+                      - Arn
+                  - 'Fn::Join':
+                      - ''
+                      - - 'Fn::GetAtt':
+                            - UsersTable
+                            - Arn
+                        - '/index/*'
+                  - 'Fn::GetAtt':
+                      - ProcessingLogTable
+                      - Arn
+  UsersTable:
+    Type: 'AWS::DynamoDB::Table'
+    Properties:
+      TableName: '${self:provider.environment.USERS_TABLE}'
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: status
+          AttributeType: S
+        - AttributeName: nextProcessingAfter
+          AttributeType: N
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+      BillingMode: PROVISIONED
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+      GlobalSecondaryIndexes:
+        - IndexName: StatusNextProcessingIndex
+          KeySchema:
+            - AttributeName: status
+              KeyType: HASH
+            - AttributeName: nextProcessingAfter
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+          ProvisionedThroughput:
+            ReadCapacityUnits: 1
+            WriteCapacityUnits: 1
+  ProcessingLogTable:
+    Type: 'AWS::DynamoDB::Table'
+    Properties:
+      TableName: '${self:provider.environment.PROCESSING_LOG_TABLE}'
+      AttributeDefinitions:
+        - AttributeName: logId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: logId
+          KeyType: HASH
+      BillingMode: PROVISIONED
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+      TimeToLiveSpecification:
+        AttributeName: dynamoTTL
+        Enabled: true
