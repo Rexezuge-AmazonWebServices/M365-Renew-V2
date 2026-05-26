@@ -21,7 +21,10 @@ provider:
     MAIL_MEOW_BASE_URL: '${env:MAIL_MEOW_BASE_URL, ""}'
     MAIL_MEOW_API_KEY: '${env:MAIL_MEOW_API_KEY, ""}'
     SNS_TOPIC_ARN:
-      Ref: NotificationTopic
+      'Fn::If':
+        - UseSnsNotifications
+        - Ref: NotificationTopic
+        - ''
     TOTP_SERVER_BASE_URL: '${env:TOTP_SERVER_BASE_URL}'
     AWS_ENDPOINT_URL: '${env:M365_AWS_ENDPOINT_URL, env:AWS_ENDPOINT_URL, ""}'
 functions:
@@ -41,6 +44,11 @@ functions:
     events:
       - schedule: rate(280 minutes)
 resources:
+  Conditions:
+    UseSnsNotifications:
+      'Fn::Equals':
+        - '${env:NOTIFICATION_PROVIDER, "sns"}'
+        - sns
   Resources:
     ExecutionRole:
       Type: 'AWS::IAM::Role'
@@ -81,15 +89,6 @@ resources:
                     - 'Fn::GetAtt':
                         - ProcessingLogTable
                         - Arn
-          - PolicyName: SNSAccess
-            PolicyDocument:
-              Version: '2012-10-17'
-              Statement:
-                - Effect: Allow
-                  Action:
-                    - 'sns:Publish'
-                  Resource:
-                    Ref: NotificationTopic
     UsersTable:
       Type: 'AWS::DynamoDB::Table'
       Properties:
@@ -137,11 +136,28 @@ resources:
         TimeToLiveSpecification:
           AttributeName: dynamoTTL
           Enabled: true
+    SnsPublishPolicy:
+      Condition: UseSnsNotifications
+      Type: 'AWS::IAM::Policy'
+      Properties:
+        PolicyName: SNSAccess
+        Roles:
+          - Ref: ExecutionRole
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - 'sns:Publish'
+              Resource:
+                Ref: NotificationTopic
     NotificationTopic:
+      Condition: UseSnsNotifications
       Type: 'AWS::SNS::Topic'
       Properties:
         TopicName: '${self:service}-Notifications'
     NotificationSubscription:
+      Condition: UseSnsNotifications
       Type: 'AWS::SNS::Subscription'
       Properties:
         Protocol: email

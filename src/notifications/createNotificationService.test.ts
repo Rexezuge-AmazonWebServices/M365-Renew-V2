@@ -17,7 +17,11 @@ describe('createNotificationService', () => {
     expect(createNotificationService('mailmeow')).toBeInstanceOf(MailMeowNotificationService);
   });
 
-  it('defaults to SNS for unknown providers', () => {
-    expect(createNotificationService('unknown')).toBeInstanceOf(SnsNotificationService);
+  it('throws for unknown providers', () => {
+    expect(() => createNotificationService('unknown')).toThrow('Unknown notification provider "unknown"');
+  });
+
+  it('throws for providers with unsupported casing', () => {
+    expect(() => createNotificationService('SNS')).toThrow('Unknown notification provider "SNS"');
   });
 });
