@@ -71,7 +71,9 @@ describe('M365LoginUtil', () => {
   it('returns visible Microsoft error text from final sign-in failure', async () => {
     const errorElement = { evaluate: mocks.elementEvaluate };
     mocks.querySelector.mockImplementation(async (selector: string) => (selector === loginErrorSelector ? errorElement : null));
-    mocks.elementEvaluate.mockResolvedValue(' Your account or password is incorrect.\nIf you do not remember your password, reset it now. ');
+    mocks.elementEvaluate.mockResolvedValue(
+      ' Your account or password is incorrect.\nIf you do not remember your password, reset it now. ',
+    );
 
     const resultPromise = M365LoginUtil.login('user@example.com', 'bad-password', 'totp-key');
     await vi.runAllTimersAsync();
