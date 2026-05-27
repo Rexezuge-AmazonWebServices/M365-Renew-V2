@@ -59,6 +59,7 @@ export const getProcessingLog = async (event: APIGatewayProxyEvent, _context: Co
       <dt>Log ID</dt><dd>${escapeHtml(log.logId)}</dd>
       <dt>User ID</dt><dd>${escapeHtml(log.userId)}</dd>
       <dt>Processed At</dt><dd>${escapeHtml(log.processedAt)}</dd>
+      <dt>Lambda External IP</dt><dd>${escapeHtml(log.lambdaExternalIpAddress ?? 'unavailable')}</dd>
       <dt>Status</dt><dd>${escapeHtml(log.processStatus)}</dd>
       <dt>Message</dt><dd class="message">${escapeHtml(log.message || '')}</dd>
     </dl>

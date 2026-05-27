@@ -1,4 +1,5 @@
 import { ScheduledEvent, Context } from 'aws-lambda';
+import { isIP } from 'node:net';
 import { UserDAO } from '../dao/UserDAO.js';
 import { ProcessingLogDAO } from '../dao/ProcessingLogDAO.js';
 import { decryptData } from '../crypto/aes-gcm.js';
@@ -21,6 +22,7 @@ export const processUsers = async (_event: ScheduledEvent, _context: Context): P
     }
 
     console.log('👉 Processing user:', user.userId);
+    const lambdaExternalIpAddress = await getLambdaExternalIpAddress();
 
     const key = process.env.AES_ENCRYPTION_KEY;
     if (!key) {
@@ -43,13 +45,13 @@ export const processUsers = async (_event: ScheduledEvent, _context: Context): P
       status = loginResult.success ? 'success' : 'failure';
       resultMessage = loginResult.success ? 'Login successful' : loginResult.errorMessage || 'Login failed';
 
-      logId = await logDAO.createLog(user.userId, status, resultMessage, loginResult.screenshotBase64);
+      logId = await logDAO.createLog(user.userId, status, resultMessage, loginResult.screenshotBase64, lambdaExternalIpAddress);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       status = 'failure';
       resultMessage = errorMessage;
 
-      logId = await logDAO.createLog(user.userId, 'failure', errorMessage);
+      logId = await logDAO.createLog(user.userId, 'failure', errorMessage, undefined, lambdaExternalIpAddress);
     }
 
     // Schedule next processing: normal interval on success, exponential backoff on failure
@@ -71,6 +73,7 @@ export const processUsers = async (_event: ScheduledEvent, _context: Context): P
       logId,
       status,
       message: resultMessage,
+      lambdaExternalIpAddress,
     });
     await createNotificationService().send(notification);
 
@@ -80,3 +83,27 @@ export const processUsers = async (_event: ScheduledEvent, _context: Context): P
     throw error;
   }
 };
+
+async function getLambdaExternalIpAddress(): Promise<string | null> {
+  const url = process.env.EXTERNAL_IP_LOOKUP_URL?.trim();
+  if (!url) {
+    return null;
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
+
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    if (!response.ok) {
+      return null;
+    }
+
+    const ipAddress = (await response.text()).trim();
+    return isIP(ipAddress) === 0 ? null : ipAddress;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
+}

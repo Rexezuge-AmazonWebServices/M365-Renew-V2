@@ -21,6 +21,7 @@ provider:
     MAIL_MEOW_API_KEY: '${env:MAIL_MEOW_API_KEY, ""}'
     SNS_TOPIC_ARN: '${file(./serverless/notifications/${env:NOTIFICATION_PROVIDER, "sns"}.yml):environment.SNS_TOPIC_ARN}'
     TOTP_SERVER_BASE_URL: '${env:TOTP_SERVER_BASE_URL}'
+    EXTERNAL_IP_LOOKUP_URL: '${env:EXTERNAL_IP_LOOKUP_URL, ""}'
     AWS_ENDPOINT_URL: '${env:M365_AWS_ENDPOINT_URL, env:AWS_ENDPOINT_URL, ""}'
 functions:
   api:

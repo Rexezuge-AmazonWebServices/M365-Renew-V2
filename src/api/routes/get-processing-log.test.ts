@@ -72,6 +72,7 @@ describe('getProcessingLog', () => {
         processedAt: '2026-05-25T12:00:00.000Z',
         processStatus: 'failure',
         message: 'Login failed <invalid>',
+        lambdaExternalIpAddress: '2001:db8::1',
         screenshotBase64: 'aW1hZ2U=',
         updatedAt: '2026-05-25T12:00:00.000Z',
         dynamoTTL: 1937476800,
@@ -85,6 +86,7 @@ describe('getProcessingLog', () => {
       expect(result.body).toContain('Processing Log Detail');
       expect(result.body).toContain('log-123');
       expect(result.body).toContain('user-123');
+      expect(result.body).toContain('2001:db8::1');
       expect(result.body).toContain('failure');
       expect(result.body).toContain('Login failed &lt;invalid&gt;');
       expect(result.body).toContain('src="data:image/png;base64,aW1hZ2U="');
@@ -105,6 +107,8 @@ describe('getProcessingLog', () => {
       const result = await getProcessingLog(event, mockContext);
 
       expect(result.statusCode).toBe(200);
+      expect(result.body).toContain('Lambda External IP');
+      expect(result.body).toContain('unavailable');
       expect(result.body).toContain('No error image available.');
       expect(result.body).not.toContain('data:image/png;base64');
     });

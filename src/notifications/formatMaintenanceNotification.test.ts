@@ -8,12 +8,14 @@ describe('formatMaintenanceNotification', () => {
       logId: 'log-456',
       status: 'success',
       message: 'ignored on success',
+      lambdaExternalIpAddress: '203.0.113.10',
       executionDate: new Date('2026-05-25T12:34:56.000Z'),
     });
 
     expect(notification.subject).toBe('Completed - Maintenance Log: M365 Renew Task');
     expect(notification.text).toContain('- User ID: user-123');
     expect(notification.text).toContain('- Log ID: log-456');
+    expect(notification.text).toContain('- Lambda External IP: 203.0.113.10');
     expect(notification.text).toContain('- Execution Time: 2026-05-25 12:34:56.000 UTC');
     expect(notification.text).toContain('- Outcome: Completed');
     expect(notification.text).toContain('- Additional Information: No irregularities were observed during the execution.');
@@ -29,6 +31,7 @@ describe('formatMaintenanceNotification', () => {
     });
 
     expect(notification.subject).toBe('Failed - Maintenance Log: M365 Renew Task');
+    expect(notification.text).toContain('- Lambda External IP: unavailable');
     expect(notification.text).toContain('- Outcome: Failed');
     expect(notification.text).toContain('- Additional Information: Login failed');
   });
