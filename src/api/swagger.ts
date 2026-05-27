@@ -74,7 +74,8 @@ export const swaggerSpec = {
       get: {
         tags: ['Internal'],
         summary: 'Get processing log detail',
-        description: 'Returns an HTML detail page for a processing log and renders the stored error screenshot when available.',
+        description:
+          'Returns an HTML detail page for a processing log, including the Lambda external IP and stored error screenshot when available.',
         parameters: [
           {
             name: 'logId',

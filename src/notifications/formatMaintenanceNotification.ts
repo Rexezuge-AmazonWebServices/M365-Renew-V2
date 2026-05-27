@@ -5,6 +5,7 @@ export interface MaintenanceNotificationInput {
   logId: string;
   status: 'success' | 'failure';
   message: string;
+  lambdaExternalIpAddress?: string | null;
   executionDate?: Date;
 }
 
@@ -22,6 +23,7 @@ export function formatMaintenanceNotification(input: MaintenanceNotificationInpu
       '',
       `- User ID: ${input.userId}`,
       `- Log ID: ${input.logId}`,
+      `- Lambda External IP: ${input.lambdaExternalIpAddress ?? 'unavailable'}`,
       `- Execution Time: ${executionTime}`,
       `- Outcome: ${result}`,
       `- Additional Information: ${additionalInformation}`,
