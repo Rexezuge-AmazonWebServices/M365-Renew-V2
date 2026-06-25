@@ -33,6 +33,6 @@
     "serverless-localstack": "^1.4.0",
     "typescript": "^6.0.x",
     "typescript-eslint": "^8.61.x",
-    "vitest": "^4.1.8"
+    "vitest": "^4.1.9"
   }
 }
