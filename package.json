@@ -29,7 +29,7 @@
     "eslint-plugin-prettier": "^5.5.x",
     "globals": "^17.7.x",
     "prettier": "^3.9.x",
-    "serverless": "^4.38.x",
+    "serverless": "^4.39.x",
     "serverless-localstack": "^1.4.0",
     "typescript": "^6.0.x",
     "typescript-eslint": "^8.62.x",
