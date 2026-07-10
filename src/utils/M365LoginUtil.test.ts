@@ -25,6 +25,13 @@ vi.mock('puppeteer-core', () => ({
   },
 }));
 
+vi.mock('@sparticuz/chromium', () => ({
+  default: {
+    args: [],
+    executablePath: vi.fn().mockResolvedValue('/tmp/chrome'),
+  },
+}));
+
 import { M365LoginUtil } from './M365LoginUtil.js';
 
 const makePage = () => ({

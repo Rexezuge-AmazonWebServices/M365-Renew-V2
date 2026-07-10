@@ -1,6 +1,4 @@
 import puppeteer from 'puppeteer-core';
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const chromium = require('@sparticuz/chromium');
 import type { Page } from 'puppeteer-core';
 
 export interface LoginResult {
@@ -19,6 +17,7 @@ export class M365LoginUtil {
     let page: Page | null = null;
 
     try {
+      const { default: chromium } = await import('@sparticuz/chromium');
       browser = await puppeteer.launch({
         args: chromium.args,
         executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || (await chromium.executablePath()),
