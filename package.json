@@ -31,7 +31,7 @@
     "prettier": "^3.9.x",
     "serverless": "^4.39.x",
     "serverless-localstack": "^1.4.0",
-    "typescript": "^6.0.x",
+    "typescript": "^7.0.x",
     "typescript-eslint": "^8.64.x",
     "vitest": "^4.1.10"
   }
