@@ -18,7 +18,7 @@
     "@aws-sdk/lib-dynamodb": "^3.1101.x",
     "@sparticuz/chromium": "^149.0.x",
     "puppeteer-core": "^25.11.x",
-    "swagger-ui-dist": "^5.32.x",
+    "swagger-ui-dist": "^5.33.x",
     "uuid": "^14.0.x"
   },
   "devDependencies": {
