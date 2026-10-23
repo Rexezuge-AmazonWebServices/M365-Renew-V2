@@ -55,8 +55,40 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Remove all objects from deployment S3 bucket
+      - name: Purge all object versions from deployment S3 bucket
         env:
           DEPLOYMENT_S3_BUCKET: ${{ vars.DEPLOYMENT_S3_BUCKET }}
         run: |
-          aws s3 rm s3://${DEPLOYMENT_S3_BUCKET} --recursive
+          set -euo pipefail
+
+          bucket="${DEPLOYMENT_S3_BUCKET:?DEPLOYMENT_S3_BUCKET is not set}"
+          payload="$(mktemp)"
+          trap 'rm -f "$payload"' EXIT
+
+          while true; do
+            objects="$(aws s3api list-object-versions \
+              --bucket "$bucket" \
+              --max-keys 1000 \
+              --no-paginate \
+              --output json \
+              | jq -c '[(.Versions // [])[], (.DeleteMarkers // [])[]] | .[:1000] | map({Key: .Key, VersionId: .VersionId})')"
+
+            count="$(jq 'length' <<< "$objects")"
+            if [ "$count" -eq 0 ]; then
+              echo "Deployment bucket s3://$bucket is empty."
+              break
+            fi
+
+            echo "Deleting $count object version(s)/delete marker(s)..."
+            jq -c '{Objects: ., Quiet: true}' <<< "$objects" > "$payload"
+
+            result="$(aws s3api delete-objects \
+              --bucket "$bucket" \
+              --delete "file://$payload")"
+
+            errors="$(jq '(.Errors // []) | length' <<< "$result")"
+            if [ "$errors" -gt 0 ]; then
+              jq '.Errors' <<< "$result" >&2
+              exit 1
+            fi
+          done
