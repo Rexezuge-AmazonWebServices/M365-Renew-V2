@@ -152,7 +152,8 @@ Pushes to `main` automatically deploy via GitHub Actions (`.github/workflows/dep
 **Required GitHub Variables:**
 
 - `DOT_ENV` (Base64-encoded `.env` content)
-- `DEPLOYMENT_S3_BUCKET` (must match `m365-renew-v2-deploy-<account-id>-<region>`; used by the post-deploy cleanup job)
+
+The post-deploy cleanup job derives the deployment bucket name from the AWS account ID and region (`m365-renew-v2-deploy-<account-id>-<region>`), so no bucket variable is required.
 
 ## API Endpoints
 
