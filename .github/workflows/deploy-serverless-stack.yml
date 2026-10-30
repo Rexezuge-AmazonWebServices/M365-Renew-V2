@@ -53,15 +53,16 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-region: ${{ secrets.AWS_REGION || 'us-east-2' }}
 
       - name: Purge all object versions from deployment S3 bucket
-        env:
-          DEPLOYMENT_S3_BUCKET: ${{ vars.DEPLOYMENT_S3_BUCKET }}
         run: |
           set -euo pipefail
 
-          bucket="${DEPLOYMENT_S3_BUCKET:?DEPLOYMENT_S3_BUCKET is not set}"
+          # Derived from serverless.yml (`provider.deploymentBucket.name`), so no repository variable is needed.
+          region="${AWS_REGION:-us-east-2}"
+          account_id="$(aws sts get-caller-identity --query Account --output text)"
+          bucket="m365-renew-v2-deploy-${account_id}-${region}"
           payload="$(mktemp)"
           trap 'rm -f "$payload"' EXIT
 
