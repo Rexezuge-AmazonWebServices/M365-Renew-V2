@@ -94,10 +94,10 @@ Deploying this stack requires permissions beyond "CloudFormation admin". The dep
 
 Two files under `infra/` capture the exact, least-privilege permission set:
 
-| File                        | Purpose                                                                                                                                                                                                       |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `infra/deploy-prereqs.json` | CloudFormation stack with the pinned deployment bucket, the `M365-Renew-V2-DeployPolicy` managed policy, and the deploy identities (IAM user and/or GitHub OIDC role). Single source of truth for the policy. |
-| `infra/deploy-policy.json`  | Generated copy of the policy document for review or manual attachment (`aws iam create-policy --policy-document file://infra/deploy-policy.json`).                                                            |
+| File                        | Purpose                                                                                                                                                                                                                                |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `infra/deploy-prereqs.json` | `M365-Renew-V2-Deployer` CloudFormation stack with the pinned deployment bucket, the `M365-Renew-V2-DeployPolicy` managed policy, and the deploy identities (IAM user and/or GitHub OIDC role). Single source of truth for the policy. |
+| `infra/deploy-policy.json`  | Generated copy of the policy document for review or manual attachment (`aws iam create-policy --policy-document file://infra/deploy-policy.json`).                                                                                     |
 
 Create the prerequisites once per account/region:
 
@@ -105,7 +105,7 @@ Create the prerequisites once per account/region:
 # IAM user with access keys (used by the current GitHub Actions workflow)
 aws cloudformation deploy \
   --template-file infra/deploy-prereqs.json \
-  --stack-name m365-renew-v2-deploy-prereqs \
+  --stack-name M365-Renew-V2-Deployer \
   --region us-east-2 \
   --capabilities CAPABILITY_NAMED_IAM \
   --parameter-overrides IdentityMode=user
@@ -115,13 +115,13 @@ aws iam create-access-key --user-name M365-Renew-V2-Deployer
 # Or, preferred: GitHub Actions OIDC role (no long-lived keys)
 aws cloudformation deploy \
   --template-file infra/deploy-prereqs.json \
-  --stack-name m365-renew-v2-deploy-prereqs \
+  --stack-name M365-Renew-V2-Deployer \
   --region us-east-2 \
   --capabilities CAPABILITY_NAMED_IAM \
   --parameter-overrides IdentityMode=oidc GitHubOrg=<org> GitHubRepo=M365-Renew-V2 GitHubBranch=main
 ```
 
-The stack pins the deployment bucket to `m365-renew-v2-deploy-<account-id>-<region>` (see `provider.deploymentBucket` in `serverless.yml`), which keeps every S3 permission scoped to a single bucket instead of the Serverless Framework's shared `serverless-framework-deployments-*` bucket.
+The `M365-Renew-V2-Deployer` stack pins the deployment bucket to `m365-renew-v2-deploy-<account-id>-<region>` (see `provider.deploymentBucket` in `serverless.yml`), which keeps every S3 permission scoped to a single bucket instead of the Serverless Framework's shared `serverless-framework-deployments-*` bucket.
 
 The `local` stage (serverless-localstack / Floci) is the exception: it falls back to the framework-managed deployment bucket, because the pinned bucket only exists in the real account. This is driven by `custom.deploymentBucket` in `serverless.yml`; any other stage, including unlisted ones, uses the pinned name.
 
