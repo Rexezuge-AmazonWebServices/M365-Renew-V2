@@ -123,6 +123,8 @@ aws cloudformation deploy \
 
 The stack pins the deployment bucket to `m365-renew-v2-deploy-<account-id>-<region>` (see `provider.deploymentBucket` in `serverless.yml`), which keeps every S3 permission scoped to a single bucket instead of the Serverless Framework's shared `serverless-framework-deployments-*` bucket.
 
+The `local` stage (serverless-localstack / Floci) is the exception: it falls back to the framework-managed deployment bucket, because the pinned bucket only exists in the real account. This is driven by `custom.deploymentBucket` in `serverless.yml`; any other stage, including unlisted ones, uses the pinned name.
+
 Permission highlights:
 
 - CloudFormation stack operations scoped to the `M365-Renew-V2` stack only.

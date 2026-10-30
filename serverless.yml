@@ -6,8 +6,10 @@ provider:
   region: us-east-2
   versionFunctions: false
   stackName: '${self:service}'
-  deploymentBucket:
-    name: 'm365-renew-v2-deploy-${aws:accountId}-${aws:region}'
+  # Pinned for real AWS deployments so IAM can scope S3 permissions to one bucket.
+  # The `local` stage (serverless-localstack / Floci) uses the framework-managed
+  # bucket instead, because the pinned bucket does not exist there.
+  deploymentBucket: '${self:custom.deploymentBucket.${sls:stage}, self:custom.deploymentBucket.default}'
   role:
     'Fn::GetAtt':
       - ExecutionRole
@@ -55,6 +57,10 @@ build:
     external:
       - '@sparticuz/chromium'
 custom:
+  deploymentBucket:
+    local: {}
+    default:
+      name: 'm365-renew-v2-deploy-${aws:accountId}-${aws:region}'
   localstack:
     stages:
       - local
