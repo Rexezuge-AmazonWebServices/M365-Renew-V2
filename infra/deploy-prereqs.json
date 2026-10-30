@@ -1,0 +1,367 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "M365-Renew-V2 deployment prerequisites: versioned deployment bucket, least-privilege deploy policy, and optional deploy identities (IAM user and/or GitHub OIDC role).",
+  "Metadata": {
+    "Notes": [
+      "This template is single-account: account 722710330862 and region us-east-2 are baked in because the policy ARNs are scoped to them.",
+      "If you fork this into another account, update AWS_ACCOUNT_ID / AWS_REGION constants in infra/render-deploy-policy.mjs and every ARN below, then run 'npm run infra:policy'.",
+      "The policy document in Resources.DeployPolicy is the single source of truth for infra/deploy-policy.json."
+    ]
+  },
+  "Parameters": {
+    "IdentityMode": {
+      "Type": "String",
+      "Default": "user",
+      "AllowedValues": ["user", "oidc", "both"],
+      "Description": "Create a long-lived IAM user, a GitHub Actions OIDC role, or both."
+    },
+    "GitHubOrg": {
+      "Type": "String",
+      "Default": "your-github-org",
+      "Description": "GitHub organization or user that owns the repository. Ignored unless IdentityMode includes oidc."
+    },
+    "GitHubRepo": {
+      "Type": "String",
+      "Default": "M365-Renew-V2",
+      "Description": "GitHub repository name. Ignored unless IdentityMode includes oidc."
+    },
+    "GitHubBranch": {
+      "Type": "String",
+      "Default": "main",
+      "Description": "Branch allowed to assume the OIDC role. Ignored unless IdentityMode includes oidc."
+    },
+    "CreateOidcProvider": {
+      "Type": "String",
+      "Default": "true",
+      "AllowedValues": ["true", "false"],
+      "Description": "Set to false when the account already has the token.actions.githubusercontent.com provider; the role then trusts the existing provider ARN."
+    }
+  },
+  "Conditions": {
+    "CreateUser": {
+      "Fn::Or": [{ "Fn::Equals": [{ "Ref": "IdentityMode" }, "user"] }, { "Fn::Equals": [{ "Ref": "IdentityMode" }, "both"] }]
+    },
+    "CreateOidcRole": {
+      "Fn::Or": [{ "Fn::Equals": [{ "Ref": "IdentityMode" }, "oidc"] }, { "Fn::Equals": [{ "Ref": "IdentityMode" }, "both"] }]
+    },
+    "CreateOidcProviderResource": {
+      "Fn::And": [{ "Condition": "CreateOidcRole" }, { "Fn::Equals": [{ "Ref": "CreateOidcProvider" }, "true"] }]
+    }
+  },
+  "Resources": {
+    "DeploymentBucket": {
+      "Type": "AWS::S3::Bucket",
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain",
+      "Properties": {
+        "BucketName": "m365-renew-v2-deploy-722710330862-us-east-2",
+        "VersioningConfiguration": { "Status": "Enabled" },
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [{ "ServerSideEncryptionByDefault": { "SSEAlgorithm": "AES256" } }]
+        },
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": true,
+          "BlockPublicPolicy": true,
+          "IgnorePublicAcls": true,
+          "RestrictPublicBuckets": true
+        },
+        "OwnershipControls": { "Rules": [{ "ObjectOwnership": "BucketOwnerEnforced" }] },
+        "LifecycleConfiguration": {
+          "Rules": [
+            {
+              "Id": "AbortIncompleteMultipartUploads",
+              "Status": "Enabled",
+              "AbortIncompleteMultipartUpload": { "DaysAfterInitiation": 7 }
+            },
+            {
+              "Id": "ExpireOldDeploymentVersions",
+              "Status": "Enabled",
+              "NoncurrentVersionExpiration": { "NoncurrentDays": 30, "NewerNoncurrentVersions": 3 },
+              "ExpiredObjectDeleteMarker": true
+            }
+          ]
+        }
+      }
+    },
+    "DeployPolicy": {
+      "Type": "AWS::IAM::ManagedPolicy",
+      "Properties": {
+        "ManagedPolicyName": "M365-Renew-V2-DeployPolicy",
+        "Description": "Deploy the M365-Renew-V2 Serverless stack (CloudFormation) and its supporting resources.",
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "DeploymentBucket",
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetBucketLocation",
+                "s3:GetBucketVersioning",
+                "s3:PutBucketVersioning",
+                "s3:GetBucketPolicy",
+                "s3:GetBucketTagging",
+                "s3:PutBucketTagging",
+                "s3:GetBucketAcl",
+                "s3:ListBucket",
+                "s3:ListBucketVersions"
+              ],
+              "Resource": "arn:aws:s3:::m365-renew-v2-deploy-722710330862-us-east-2"
+            },
+            {
+              "Sid": "DeploymentBucketObjects",
+              "Effect": "Allow",
+              "Action": ["s3:GetObject", "s3:GetObjectVersion", "s3:PutObject", "s3:DeleteObject", "s3:DeleteObjectVersion"],
+              "Resource": "arn:aws:s3:::m365-renew-v2-deploy-722710330862-us-east-2/*"
+            },
+            {
+              "Sid": "CloudFormationStack",
+              "Effect": "Allow",
+              "Action": [
+                "cloudformation:CreateStack",
+                "cloudformation:UpdateStack",
+                "cloudformation:DeleteStack",
+                "cloudformation:DescribeStacks",
+                "cloudformation:DescribeStackEvents",
+                "cloudformation:DescribeStackResource",
+                "cloudformation:DescribeStackResources",
+                "cloudformation:ListStackResources",
+                "cloudformation:GetTemplate",
+                "cloudformation:GetTemplateSummary",
+                "cloudformation:CreateChangeSet",
+                "cloudformation:DescribeChangeSet",
+                "cloudformation:ExecuteChangeSet",
+                "cloudformation:DeleteChangeSet",
+                "cloudformation:ListChangeSets",
+                "cloudformation:ContinueUpdateRollback"
+              ],
+              "Resource": [
+                "arn:aws:cloudformation:us-east-2:722710330862:stack/M365-Renew-V2/*",
+                "arn:aws:cloudformation:us-east-2:722710330862:changeSet/M365-Renew-V2/*"
+              ]
+            },
+            {
+              "Sid": "CloudFormationResourceless",
+              "Effect": "Allow",
+              "Action": ["cloudformation:ValidateTemplate", "cloudformation:ListStacks"],
+              "Resource": "*"
+            },
+            {
+              "Sid": "ExecutionRoleLifecycle",
+              "Effect": "Allow",
+              "Action": [
+                "iam:CreateRole",
+                "iam:GetRole",
+                "iam:UpdateAssumeRolePolicy",
+                "iam:DeleteRole",
+                "iam:TagRole",
+                "iam:UntagRole",
+                "iam:ListRoleTags",
+                "iam:ListRolePolicies",
+                "iam:GetRolePolicy",
+                "iam:PutRolePolicy",
+                "iam:DeleteRolePolicy",
+                "iam:AttachRolePolicy",
+                "iam:DetachRolePolicy",
+                "iam:ListAttachedRolePolicies",
+                "iam:ListInstanceProfilesForRole"
+              ],
+              "Resource": "arn:aws:iam::722710330862:role/M365-Renew-V2-ExecutionRole"
+            },
+            {
+              "Sid": "PassLambdaExecutionRole",
+              "Effect": "Allow",
+              "Action": "iam:PassRole",
+              "Resource": "arn:aws:iam::722710330862:role/M365-Renew-V2-ExecutionRole",
+              "Condition": { "StringEquals": { "iam:PassedToService": "lambda.amazonaws.com" } }
+            },
+            {
+              "Sid": "Functions",
+              "Effect": "Allow",
+              "Action": [
+                "lambda:CreateFunction",
+                "lambda:DeleteFunction",
+                "lambda:GetFunction",
+                "lambda:GetFunctionConfiguration",
+                "lambda:UpdateFunctionCode",
+                "lambda:UpdateFunctionConfiguration",
+                "lambda:ListVersionsByFunction",
+                "lambda:GetPolicy",
+                "lambda:AddPermission",
+                "lambda:RemovePermission",
+                "lambda:GetFunctionConcurrency",
+                "lambda:PutFunctionConcurrency",
+                "lambda:DeleteFunctionConcurrency",
+                "lambda:CreateFunctionUrlConfig",
+                "lambda:UpdateFunctionUrlConfig",
+                "lambda:GetFunctionUrlConfig",
+                "lambda:DeleteFunctionUrlConfig",
+                "lambda:TagResource",
+                "lambda:UntagResource",
+                "lambda:ListTags"
+              ],
+              "Resource": [
+                "arn:aws:lambda:us-east-2:722710330862:function:M365-Renew-V2-API",
+                "arn:aws:lambda:us-east-2:722710330862:function:M365-Renew-V2-API:*",
+                "arn:aws:lambda:us-east-2:722710330862:function:M365-Renew-V2-Scheduler",
+                "arn:aws:lambda:us-east-2:722710330862:function:M365-Renew-V2-Scheduler:*"
+              ]
+            },
+            {
+              "Sid": "LogGroups",
+              "Effect": "Allow",
+              "Action": [
+                "logs:CreateLogGroup",
+                "logs:DeleteLogGroup",
+                "logs:DescribeLogStreams",
+                "logs:PutRetentionPolicy",
+                "logs:DeleteRetentionPolicy",
+                "logs:TagResource",
+                "logs:UntagResource",
+                "logs:ListTagsForResource",
+                "logs:ListTagsLogGroup"
+              ],
+              "Resource": "arn:aws:logs:us-east-2:722710330862:log-group:/aws/lambda/M365-Renew-V2-*:*"
+            },
+            {
+              "Sid": "LogGroupsList",
+              "Effect": "Allow",
+              "Action": "logs:DescribeLogGroups",
+              "Resource": "*"
+            },
+            {
+              "Sid": "Tables",
+              "Effect": "Allow",
+              "Action": [
+                "dynamodb:CreateTable",
+                "dynamodb:DeleteTable",
+                "dynamodb:DescribeTable",
+                "dynamodb:UpdateTable",
+                "dynamodb:DescribeTimeToLive",
+                "dynamodb:UpdateTimeToLive",
+                "dynamodb:DescribeContinuousBackups",
+                "dynamodb:TagResource",
+                "dynamodb:UntagResource",
+                "dynamodb:ListTagsOfResource"
+              ],
+              "Resource": [
+                "arn:aws:dynamodb:us-east-2:722710330862:table/M365-Renew-V2-Users",
+                "arn:aws:dynamodb:us-east-2:722710330862:table/M365-Renew-V2-Users/index/*",
+                "arn:aws:dynamodb:us-east-2:722710330862:table/M365-Renew-V2-Processing-Log"
+              ]
+            },
+            {
+              "Sid": "Notifications",
+              "Effect": "Allow",
+              "Action": [
+                "sns:CreateTopic",
+                "sns:DeleteTopic",
+                "sns:GetTopicAttributes",
+                "sns:SetTopicAttributes",
+                "sns:Subscribe",
+                "sns:Unsubscribe",
+                "sns:GetSubscriptionAttributes",
+                "sns:SetSubscriptionAttributes",
+                "sns:ListSubscriptionsByTopic",
+                "sns:TagResource",
+                "sns:UntagResource",
+                "sns:ListTagsForResource"
+              ],
+              "Resource": "arn:aws:sns:us-east-2:722710330862:M365-Renew-V2-Notifications*"
+            },
+            {
+              "Sid": "ScheduleRule",
+              "Effect": "Allow",
+              "Action": [
+                "events:PutRule",
+                "events:DescribeRule",
+                "events:DeleteRule",
+                "events:EnableRule",
+                "events:DisableRule",
+                "events:PutTargets",
+                "events:RemoveTargets",
+                "events:ListTargetsByRule",
+                "events:TagResource",
+                "events:UntagResource",
+                "events:ListTagsForResource"
+              ],
+              "Resource": "arn:aws:events:us-east-2:722710330862:rule/M365-Renew-V2*"
+            }
+          ]
+        }
+      }
+    },
+    "DeployUser": {
+      "Type": "AWS::IAM::User",
+      "Condition": "CreateUser",
+      "Properties": {
+        "UserName": "M365-Renew-V2-Deployer",
+        "ManagedPolicyArns": [{ "Ref": "DeployPolicy" }]
+      }
+    },
+    "GitHubOidcProvider": {
+      "Type": "AWS::IAM::OIDCProvider",
+      "Condition": "CreateOidcProviderResource",
+      "Properties": {
+        "Url": "https://token.actions.githubusercontent.com",
+        "ClientIdList": ["sts.amazonaws.com"],
+        "ThumbprintList": ["6938fd4d98bab03faadb97b34396831e3780aea1", "1c58a3a8518e8759bf075b76b750d4f2df264fcd"]
+      }
+    },
+    "GitHubDeployRole": {
+      "Type": "AWS::IAM::Role",
+      "Condition": "CreateOidcRole",
+      "Properties": {
+        "RoleName": "M365-Renew-V2-GitHubDeployRole",
+        "Description": "Assumed by GitHub Actions on the deploy branch to run serverless deploy.",
+        "MaxSessionDuration": 3600,
+        "ManagedPolicyArns": [{ "Ref": "DeployPolicy" }],
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Federated": {
+                  "Fn::If": [
+                    "CreateOidcProviderResource",
+                    { "Ref": "GitHubOidcProvider" },
+                    { "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:oidc-provider/token.actions.githubusercontent.com" }
+                  ]
+                }
+              },
+              "Action": "sts:AssumeRoleWithWebIdentity",
+              "Condition": {
+                "StringEquals": { "token.actions.githubusercontent.com:aud": "sts.amazonaws.com" },
+                "StringLike": {
+                  "token.actions.githubusercontent.com:sub": {
+                    "Fn::Sub": "repo:${GitHubOrg}/${GitHubRepo}:ref:refs/heads/${GitHubBranch}"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  "Outputs": {
+    "DeploymentBucketName": {
+      "Description": "Deployment bucket pinned in serverless.yml (provider.deploymentBucket.name).",
+      "Value": { "Ref": "DeploymentBucket" }
+    },
+    "DeployPolicyArn": {
+      "Description": "Least-privilege policy required to deploy the M365-Renew-V2 stack.",
+      "Value": { "Ref": "DeployPolicy" }
+    },
+    "DeployUserArn": {
+      "Condition": "CreateUser",
+      "Description": "IAM user for long-lived access keys (create the key separately with aws iam create-access-key).",
+      "Value": { "Fn::GetAtt": ["DeployUser", "Arn"] }
+    },
+    "GitHubDeployRoleArn": {
+      "Condition": "CreateOidcRole",
+      "Description": "Role to assume from GitHub Actions via OIDC.",
+      "Value": { "Fn::GetAtt": ["GitHubDeployRole", "Arn"] }
+    }
+  }
+}

@@ -6,6 +6,8 @@ provider:
   region: us-east-2
   versionFunctions: false
   stackName: '${self:service}'
+  deploymentBucket:
+    name: 'm365-renew-v2-deploy-${aws:accountId}-${aws:region}'
   role:
     'Fn::GetAtt':
       - ExecutionRole
