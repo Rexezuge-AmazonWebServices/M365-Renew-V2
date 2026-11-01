@@ -32,14 +32,20 @@ jobs:
           DOT_ENV: ${{ vars.DOT_ENV }}
 
       - name: Install Dependencies
-        run: npm install
+        uses: ./.github/actions/retry-step
+        with:
+          command: npm install
+          max_attempts: '3'
 
       - name: Deploy Stack to AWS
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           SERVERLESS_LICENSE_KEY: ${{ secrets.SERVERLESS_LICENSE_KEY }}
-        run: npm run deploy
+        uses: ./.github/actions/retry-step
+        with:
+          command: npm run deploy
+          max_attempts: '3'
 
   cleanup-deployment-bucket:
     name: Cleanup Deployment Bucket

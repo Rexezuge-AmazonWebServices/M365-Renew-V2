@@ -1,0 +1,182 @@
+name: Backup Users Table
+
+permissions:
+  contents: read
+
+on:
+  schedule:
+    - cron: '15 4 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: backup-users-table
+  cancel-in-progress: false
+
+env:
+  BACKUP_RETENTION_DAYS: ${{ vars.BACKUP_RETENTION_DAYS || '30' }}
+  S3_PREFIX: ${{ vars.BACKUP_S3_PREFIX || 'm365-renew-v2/users/' }}
+  WEBDAV_BASE_PATH: ${{ vars.BACKUP_WEBDAV_BASE_PATH || 'm365-renew-v2' }}
+
+jobs:
+  check-secrets:
+    name: Check Backup Configuration
+    runs-on: ubuntu-latest
+    outputs:
+      enabled: ${{ steps.check.outputs.enabled }}
+      s3: ${{ steps.check.outputs.s3 }}
+      webdav: ${{ steps.check.outputs.webdav }}
+    steps:
+      - name: Detect Configured Destinations
+        id: check
+        env:
+          BACKUP_ENCRYPTION_KEY: ${{ secrets.BACKUP_ENCRYPTION_KEY }}
+          S3_BUCKET: ${{ secrets.BACKUP_S3_BUCKET }}
+          S3_ACCESS_KEY_ID: ${{ secrets.BACKUP_S3_ACCESS_KEY_ID }}
+          S3_SECRET_ACCESS_KEY: ${{ secrets.BACKUP_S3_SECRET_ACCESS_KEY }}
+          WEBDAV_URL: ${{ secrets.BACKUP_WEBDAV_URL }}
+          WEBDAV_USER: ${{ secrets.BACKUP_WEBDAV_USER }}
+          WEBDAV_PASSWORD: ${{ secrets.BACKUP_WEBDAV_PASSWORD }}
+        shell: bash
+        run: |
+          configured=false
+          s3=false
+          webdav=false
+          s3_values="${S3_BUCKET}${S3_ACCESS_KEY_ID}${S3_SECRET_ACCESS_KEY}"
+          webdav_values="${WEBDAV_URL}${WEBDAV_USER}${WEBDAV_PASSWORD}"
+          if [ -n "$s3_values" ] && { [ -z "$S3_BUCKET" ] || [ -z "$S3_ACCESS_KEY_ID" ] || [ -z "$S3_SECRET_ACCESS_KEY" ]; }; then
+            echo "S3 backup configuration is incomplete." >&2
+            exit 1
+          fi
+          if [ -n "$webdav_values" ] && { [ -z "$WEBDAV_URL" ] || [ -z "$WEBDAV_USER" ] || [ -z "$WEBDAV_PASSWORD" ]; }; then
+            echo "WebDAV backup configuration is incomplete." >&2
+            exit 1
+          fi
+          if [ -n "$S3_BUCKET" ] && [ -n "$S3_ACCESS_KEY_ID" ] && [ -n "$S3_SECRET_ACCESS_KEY" ]; then
+            s3=true
+            configured=true
+          fi
+          if [ -n "$WEBDAV_URL" ] && [ -n "$WEBDAV_USER" ] && [ -n "$WEBDAV_PASSWORD" ]; then
+            webdav=true
+            configured=true
+          fi
+          if [ "$configured" = true ] && [ -z "$BACKUP_ENCRYPTION_KEY" ]; then
+            echo "A backup destination is configured but BACKUP_ENCRYPTION_KEY is missing." >&2
+            exit 1
+          fi
+          echo "enabled=$configured" >> "$GITHUB_OUTPUT"
+          echo "s3=$s3" >> "$GITHUB_OUTPUT"
+          echo "webdav=$webdav" >> "$GITHUB_OUTPUT"
+
+  export:
+    name: Export And Encrypt Users
+    needs: check-secrets
+    if: needs.check-secrets.outputs.enabled == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set Up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install Dependencies
+        uses: ./.github/actions/retry-step
+        with:
+          command: npm ci --legacy-peer-deps
+          max_attempts: '3'
+
+      - name: Compile Backup Exporter
+        run: npm run tsc
+
+      - name: Export Users Table
+        uses: ./.github/actions/retry-step
+        with:
+          command: node dist/backup/usersBackup.js
+          max_attempts: '3'
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION || 'us-east-2' }}
+          USERS_TABLE: M365-Renew-V2-Users
+          BACKUP_ENCRYPTION_KEY: ${{ secrets.BACKUP_ENCRYPTION_KEY }}
+          BACKUP_OUTPUT_FILE: m365-renew-v2-users-${{ github.run_id }}.json.gz.enc
+
+      - name: Upload Backup Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: users-backup
+          path: m365-renew-v2-users-${{ github.run_id }}.json.gz.enc
+          if-no-files-found: error
+          retention-days: 1
+
+  backup-s3:
+    name: Upload To S3
+    needs: [check-secrets, export]
+    if: needs.check-secrets.outputs.s3 == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Backup Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: users-backup
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.BACKUP_S3_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.BACKUP_S3_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.BACKUP_S3_REGION || 'us-east-2' }}
+
+      - name: Upload And Prune S3 Backups
+        env:
+          S3_BUCKET: ${{ secrets.BACKUP_S3_BUCKET }}
+          S3_ENDPOINT: ${{ secrets.BACKUP_S3_ENDPOINT }}
+          BACKUP_RETENTION_DAYS: ${{ env.BACKUP_RETENTION_DAYS }}
+          S3_PREFIX: ${{ env.S3_PREFIX }}
+          BACKUP_FILE: m365-renew-v2-users-${{ github.run_id }}.json.gz.enc
+        run: |
+          set -euo pipefail
+          endpoint_args=()
+          if [ -n "${S3_ENDPOINT:-}" ]; then
+            endpoint_args+=(--endpoint-url "$S3_ENDPOINT")
+          fi
+          aws s3 cp "$BACKUP_FILE" "s3://${S3_BUCKET}/${S3_PREFIX}${BACKUP_FILE}" "${endpoint_args[@]}"
+          cutoff="$(date -u -d "-${BACKUP_RETENTION_DAYS} days" +%s)"
+          aws s3api list-objects-v2 --bucket "$S3_BUCKET" --prefix "$S3_PREFIX" --output json "${endpoint_args[@]}" |
+            jq -r --argjson cutoff "$cutoff" '.Contents[]? | select((.LastModified | fromdateiso8601) < $cutoff) | .Key' |
+            while IFS= read -r key; do
+              [ -z "$key" ] || aws s3api delete-object --bucket "$S3_BUCKET" --key "$key" "${endpoint_args[@]}"
+            done
+
+  backup-webdav:
+    name: Upload To WebDAV
+    needs: [check-secrets, export]
+    if: needs.check-secrets.outputs.webdav == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Backup Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: users-backup
+
+      - name: Set Up rclone
+        uses: AnimMouse/setup-rclone@26ef2133e09fd383329a1d4c1fbe6a71db1976c9 # v1
+
+      - name: Configure, Upload, And Prune WebDAV Backups
+        env:
+          WEBDAV_URL: ${{ secrets.BACKUP_WEBDAV_URL }}
+          WEBDAV_USER: ${{ secrets.BACKUP_WEBDAV_USER }}
+          WEBDAV_PASSWORD: ${{ secrets.BACKUP_WEBDAV_PASSWORD }}
+          WEBDAV_VENDOR: ${{ secrets.BACKUP_WEBDAV_VENDOR || 'other' }}
+          WEBDAV_BASE_PATH: ${{ env.WEBDAV_BASE_PATH }}
+          BACKUP_RETENTION_DAYS: ${{ env.BACKUP_RETENTION_DAYS }}
+          BACKUP_FILE: m365-renew-v2-users-${{ github.run_id }}.json.gz.enc
+        run: |
+          set -euo pipefail
+          password="$(rclone obscure "$WEBDAV_PASSWORD")"
+          rclone config create users-backup webdav url "$WEBDAV_URL" vendor "$WEBDAV_VENDOR" user "$WEBDAV_USER" pass "$password" --non-interactive
+          rclone copyto "$BACKUP_FILE" "users-backup:${WEBDAV_BASE_PATH}/${BACKUP_FILE}"
+          rclone delete "users-backup:${WEBDAV_BASE_PATH}" --min-age "${BACKUP_RETENTION_DAYS}d" --include 'm365-renew-v2-users-*.json.gz.enc'

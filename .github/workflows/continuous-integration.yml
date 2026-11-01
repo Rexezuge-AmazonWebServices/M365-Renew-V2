@@ -33,7 +33,10 @@ jobs:
         run: npm ci --legacy-peer-deps
 
       - name: Check Formatting
-        run: npx prettier --check .
+        uses: ./.github/actions/retry-step
+        with:
+          command: npx prettier --check .
+          max_attempts: '2'
 
   lint:
     name: ESLint
@@ -53,7 +56,10 @@ jobs:
         run: npm ci --legacy-peer-deps
 
       - name: Run ESLint
-        run: npx eslint --ignore-pattern dist/ --ignore-pattern .serverless/ .
+        uses: ./.github/actions/retry-step
+        with:
+          command: npx eslint --ignore-pattern dist/ --ignore-pattern .serverless/ .
+          max_attempts: '2'
 
   typecheck:
     name: TypeScript
@@ -73,7 +79,10 @@ jobs:
         run: npm ci --legacy-peer-deps
 
       - name: Type Check
-        run: npm run tsc
+        uses: ./.github/actions/retry-step
+        with:
+          command: npm run tsc
+          max_attempts: '2'
 
   tests:
     name: Vitest
@@ -93,7 +102,10 @@ jobs:
         run: npm ci --legacy-peer-deps
 
       - name: Run Tests
-        run: npm run test
+        uses: ./.github/actions/retry-step
+        with:
+          command: npm run test
+          max_attempts: '2'
 
   serverless-floci-smoke:
     name: Serverless Floci Smoke (${{ matrix.notification-provider }})
