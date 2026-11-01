@@ -89,7 +89,10 @@ jobs:
           max_attempts: '3'
 
       - name: Compile Backup Exporter
-        run: npm run tsc
+        run: npx tsc
+
+      - name: Verify Backup Exporter
+        run: test -f dist/backup/usersBackup.js
 
       - name: Export Users Table
         uses: ./.github/actions/retry-step
