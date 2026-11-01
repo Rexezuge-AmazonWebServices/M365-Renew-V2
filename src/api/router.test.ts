@@ -44,22 +44,20 @@ function makeEvent(overrides: Partial<APIGatewayProxyEvent> & Record<string, unk
 const mockContext = {} as Context;
 
 describe('router', () => {
-  describe('CORS', () => {
-    it('should return 200 with CORS headers for OPTIONS requests', async () => {
+  describe('responses', () => {
+    it('should return 404 without CORS headers for OPTIONS requests', async () => {
       const event = makeEvent({ httpMethod: 'OPTIONS', path: '/any-path' });
       const result = await router(event, mockContext);
 
-      expect(result.statusCode).toBe(200);
-      expect(result.headers?.['Access-Control-Allow-Origin']).toBe('*');
-      expect(result.headers?.['Access-Control-Allow-Methods']).toContain('GET');
-      expect(result.headers?.['Access-Control-Allow-Methods']).toContain('POST');
+      expect(result.statusCode).toBe(404);
+      expect(result.headers).toEqual({});
     });
 
-    it('should include CORS headers on all responses', async () => {
+    it('should not include CORS headers on not-found responses', async () => {
       const event = makeEvent({ httpMethod: 'GET', path: '/nonexistent' });
       const result = await router(event, mockContext);
 
-      expect(result.headers?.['Access-Control-Allow-Origin']).toBe('*');
+      expect(result.headers).toEqual({});
     });
   });
 

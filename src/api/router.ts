@@ -13,20 +13,6 @@ export const router = async (event: APIGatewayProxyEvent, context: Context): Pro
   const path = (event as APIGatewayProxyEvent & { rawPath?: string }).rawPath || event.path;
   console.log('Request:', { httpMethod, path });
 
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type,Authorization',
-    'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
-  };
-
-  if (httpMethod === 'OPTIONS') {
-    return {
-      statusCode: 200,
-      headers: corsHeaders,
-      body: '',
-    };
-  }
-
   try {
     let result: APIGatewayProxyResult;
 
@@ -65,32 +51,29 @@ export const router = async (event: APIGatewayProxyEvent, context: Context): Pro
 </html>`;
       result = {
         statusCode: 200,
-        headers: { 'Content-Type': 'text/html', ...corsHeaders },
+        headers: { 'Content-Type': 'text/html' },
         body: swaggerUiHtml,
       };
     } else if (httpMethod === 'GET' && path === '/docs/swagger.json') {
       result = {
         statusCode: 200,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(swaggerSpec),
       };
     } else {
       result = {
         statusCode: 404,
-        headers: corsHeaders,
+        headers: {},
         body: JSON.stringify({ error: 'Not Found' }),
       };
     }
 
-    return {
-      ...result,
-      headers: { ...result.headers, ...corsHeaders },
-    };
+    return result;
   } catch (error) {
     console.error('Router error:', error);
     return {
       statusCode: 500,
-      headers: corsHeaders,
+      headers: {},
       body: JSON.stringify({ error: 'Internal Server Error' }),
     };
   }
