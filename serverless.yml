@@ -34,8 +34,7 @@ functions:
     timeout: 10
     memorySize: 512
     reservedConcurrency: 0
-    url:
-      cors: true
+    url: true
   scheduler:
     handler: src/handler.scheduler
     name: '${self:service}-Scheduler'
