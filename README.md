@@ -143,11 +143,20 @@ npm run infra:policy:check   # verify (also runs as part of npm run build)
 
 Pushes to `main` automatically deploy via GitHub Actions (`.github/workflows/deploy-serverless-stack.yml`).
 
+The users table backup workflow runs daily at 04:15 UTC (`.github/workflows/backup-users-table.yml`). It scans the table, compresses and encrypts the export locally in the runner, and uploads the encrypted file to any configured S3 and/or WebDAV destination. Destinations are optional; configured destinations require `BACKUP_ENCRYPTION_KEY`.
+
 **Required GitHub Secrets:**
 
 - `AWS_ACCESS_KEY_ID`
 - `AWS_SECRET_ACCESS_KEY`
 - `SERVERLESS_LICENSE_KEY`
+
+For users-table backups, configure `BACKUP_ENCRYPTION_KEY` plus either or both destination sets:
+
+- S3: `BACKUP_S3_ACCESS_KEY_ID`, `BACKUP_S3_SECRET_ACCESS_KEY`, `BACKUP_S3_BUCKET` (optional `BACKUP_S3_REGION`, `BACKUP_S3_ENDPOINT`)
+- WebDAV: `BACKUP_WEBDAV_URL`, `BACKUP_WEBDAV_USER`, `BACKUP_WEBDAV_PASSWORD` (optional `BACKUP_WEBDAV_VENDOR`)
+
+The backup workflow retains destination files for 30 days by default (`BACKUP_RETENTION_DAYS` repository variable). To restore, download the encrypted file, decrypt it with the base64-encoded 256-bit `BACKUP_ENCRYPTION_KEY`, gunzip the resulting JSON, and write each object in `items` to `M365-Renew-V2-Users` with the AWS CLI or a controlled migration script. Treat the key and decrypted export as production secrets.
 
 **Required GitHub Variables:**
 
