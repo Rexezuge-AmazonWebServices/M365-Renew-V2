@@ -41,7 +41,7 @@ functions:
     timeout: 120
     memorySize: 2560
     events:
-      - schedule: rate(280 minutes)
+      - schedule: rate(140 minutes)
 resources:
   - ${file(./serverless/resources/base.yml)}
   - ${file(./serverless/notifications/${env:NOTIFICATION_PROVIDER, "sns"}.yml):resources}
