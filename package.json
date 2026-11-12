@@ -29,7 +29,7 @@
     "eslint": "^10.13.x",
     "eslint-config-prettier": "^10.1.x",
     "eslint-plugin-prettier": "^5.5.x",
-    "globals": "^17.12.x",
+    "globals": "^17.14.x",
     "prettier": "^3.9.x",
     "serverless": "^4.46.x",
     "serverless-localstack": "^1.4.0",
